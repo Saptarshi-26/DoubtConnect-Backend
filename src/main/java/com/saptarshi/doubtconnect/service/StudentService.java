@@ -8,6 +8,7 @@ import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
 import com.saptarshi.doubtconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,8 +27,15 @@ public class StudentService {
     @Autowired
     private UserRepository userRepository;
 
-    public Optional<StudentProfile> findStudent(Long id){
-        return studentProfileRepository.findById(id);
+    public Optional<StudentProfile> findStudent(Long id, Authentication authentication){
+
+
+            Optional<StudentProfile> studentProfile = studentProfileRepository.findById(id);
+        if(studentProfile.isEmpty()|| !isOwner(studentProfile.get(),authentication.getName())) {
+            return Optional.empty();
+        }
+
+        return studentProfile;
     }
 
     private boolean isOwner(

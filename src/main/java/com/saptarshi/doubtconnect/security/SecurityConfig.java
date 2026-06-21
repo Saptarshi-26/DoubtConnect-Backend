@@ -68,6 +68,9 @@ public class SecurityConfig {
                                 "/teacher/**")
                         .hasAnyRole("ADMIN","TEACHER")
 
+                        .requestMatchers("/user/**")
+                        .hasRole("ADMIN")
+
                         // Student endpoints
                         .requestMatchers("/student/**")
                         .hasAnyRole("ADMIN","STUDENT")

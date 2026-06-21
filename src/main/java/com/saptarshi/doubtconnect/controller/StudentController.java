@@ -27,7 +27,7 @@ public class StudentController {
             @PathVariable Long id, Authentication authentication){
 
         Optional<StudentProfile> student =
-                studentService.findStudent(id);
+                studentService.findStudent(id,authentication);
 
         return student.isPresent()
                 ? new ResponseEntity<>(student.get(),
