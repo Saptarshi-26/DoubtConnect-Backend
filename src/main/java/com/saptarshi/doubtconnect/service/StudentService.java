@@ -27,6 +27,11 @@ public class StudentService {
     @Autowired
     private UserRepository userRepository;
 
+
+    public List<StudentProfile> getAll(){
+        return studentProfileRepository.findAll();
+    }
+
     public Optional<StudentProfile> findStudent(Long id, Authentication authentication){
 
 

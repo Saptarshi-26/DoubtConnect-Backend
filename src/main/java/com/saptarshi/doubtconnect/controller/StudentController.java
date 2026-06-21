@@ -22,6 +22,11 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAll(){
+        return new ResponseEntity<>(studentService.getAll(),HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> findStudent(
             @PathVariable Long id, Authentication authentication){

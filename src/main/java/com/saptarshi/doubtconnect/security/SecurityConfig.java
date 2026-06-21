@@ -75,6 +75,9 @@ public class SecurityConfig {
                         .requestMatchers("/student/**")
                         .hasAnyRole("ADMIN","STUDENT")
 
+                        .requestMatchers("/student/all/**")
+                        .hasRole("ADMIN")
+
 
                         .requestMatchers(HttpMethod.POST,"/session/save/**")
                         .hasAnyRole("ADMIN","STUDENT")
