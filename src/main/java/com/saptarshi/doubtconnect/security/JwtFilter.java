@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Enumeration;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -23,6 +24,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -77,6 +79,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource()
                                 .buildDetails(request));
+
+                System.out.println("JWT VALIDATED");
 
                 SecurityContextHolder
                         .getContext()

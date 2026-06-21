@@ -40,12 +40,10 @@ public class JwtUtil {
     public String generateToken(String username){
         return Jwts.builder()
                 .subject(username)
-                .signWith(getSigningKey())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSigningKey())
                 .compact();
-
     }
 
     public String extractUsername(String token){

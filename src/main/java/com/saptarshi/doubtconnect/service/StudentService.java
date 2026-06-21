@@ -3,8 +3,10 @@ package com.saptarshi.doubtconnect.service;
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
+import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
+import com.saptarshi.doubtconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,9 @@ public class StudentService {
     @Autowired
     TeacherProfileRepository teacherProfileRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public Optional<StudentProfile> findStudent(Long id){
         return studentProfileRepository.findById(id);
     }
@@ -29,9 +34,11 @@ public class StudentService {
             StudentProfile student,
             String username){
 
+        Optional<User> user = userRepository.findByUsername(username);
         return student.getUser()
                 .getUsername()
-                .equals(username);
+                .equals(username) ||
+                user.isPresent() && user.get().getRole().equals("ADMIN");
     }
 
     public List<TeacherProfile> getFavourites(

@@ -36,6 +36,11 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
 
                         // Public
                         .requestMatchers("/auth/**")
@@ -51,21 +56,38 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/teacher/**")
-                        .hasRole("TEACHER")
+                        .hasAnyRole("ADMIN","TEACHER")
 
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/teacher/**")
-                        .hasRole("TEACHER")
+                        .hasAnyRole("ADMIN","TEACHER")
 
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/teacher/**")
-                        .hasRole("TEACHER")
+                        .hasAnyRole("ADMIN","TEACHER")
 
                         // Student endpoints
                         .requestMatchers("/student/**")
-                        .hasRole("STUDENT")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+
+                        .requestMatchers(HttpMethod.POST,"/session/save/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+                        .requestMatchers(HttpMethod.PUT,"/session/update/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+                        .requestMatchers(HttpMethod.DELETE,"/session/delete/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+                        .requestMatchers(HttpMethod.POST,"/session/accept/**")
+                        .hasAnyRole("ADMIN","TEACHER")
+
+                        .requestMatchers(HttpMethod.POST,"/session/reject/**")
+                        .hasAnyRole("ADMIN","TEACHER")
+
 
                         // Everything else requires login
                         .anyRequest()

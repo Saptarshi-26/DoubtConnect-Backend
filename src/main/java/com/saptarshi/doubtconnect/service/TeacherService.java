@@ -4,7 +4,10 @@ import com.saptarshi.doubtconnect.dto.SubjectDTO;
 import com.saptarshi.doubtconnect.dto.UpdateBioDTO;
 import com.saptarshi.doubtconnect.dto.UpdateRateDTO;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
+import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
+import com.saptarshi.doubtconnect.repository.UserRepository;
+import org.hibernate.annotations.Array;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +19,9 @@ public class TeacherService {
 
     @Autowired
     private TeacherProfileRepository teacherProfileRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
     public List<TeacherProfile> findAll(){
@@ -30,9 +36,12 @@ public class TeacherService {
             TeacherProfile teacher,
             String username){
 
+        Optional<User> user = userRepository.findByUsername(username);
+
         return teacher.getUser()
                 .getUsername()
-                .equals(username);
+                .equals(username) ||
+                 user.isPresent() && user.get().getRole().equals("ADMIN");
     }
 
     public boolean updateBio(

@@ -6,10 +6,13 @@ import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
 import com.saptarshi.doubtconnect.entity.SessionRequest;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
+import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
 import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
+import com.saptarshi.doubtconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,9 @@ import java.util.Optional;
 public class SessionRequestService {
 
     @Autowired
+    UserRepository userRepository ;
+
+    @Autowired
     SessionRequestRepository sessionRequestRepository;
 
     @Autowired
@@ -30,18 +36,28 @@ public class SessionRequestService {
     @Autowired
     TeacherProfileRepository teacherProfileRepository;
 
+    private boolean ownership(Authentication authentication, String username){
+        Optional<User> user = userRepository.findByUsername(authentication.getName());
+
+        return user.filter(value -> authentication.getName().equals(username) || value.getRole().equals("ADMIN")).isPresent();
+
+    }
+
 
     @Transactional
-    public boolean sendRequest(SessionRequestDTO dto){
+    public boolean sendRequest(SessionRequestDTO dto, Authentication authentication){
 
         Optional<StudentProfile> student =
                 studentProfileRepository.findById(dto.getStudentProfileId());
+
 
         Optional<TeacherProfile> teacher =
                 teacherProfileRepository.findById(dto.getTeacherProfileId());
 
 
         if(student.isPresent() && teacher.isPresent()) {
+
+            if(!ownership(authentication,student.get().getUser().getUsername()))return false;
 
             SessionRequest request = new SessionRequest();
 
@@ -62,28 +78,39 @@ public class SessionRequestService {
         return false;
     }
 
-    public List<SessionRequest> findByStudentProfile(Long id ){
+    public List<SessionRequest> findByStudentProfile(Long id ,Authentication authentication){
+
         Optional<StudentProfile> studentProfile = studentProfileRepository.findById(id);
         if(studentProfile.isPresent()) {
+
+            if(!ownership(authentication,studentProfile.get().getUser().getUsername()))
+                return new ArrayList<>();
+
             return sessionRequestRepository.findByStudentProfile(studentProfile.get());
         }
         return new ArrayList<>();
     }
 
-    public List<SessionRequest> findTeacherProfile(Long id){
+    public List<SessionRequest> findTeacherProfile(Long id,Authentication authentication){
         Optional<TeacherProfile> teacherProfile = teacherProfileRepository.findById(id);
         if(teacherProfile.isPresent()) {
+
+            if(!ownership(authentication,teacherProfile.get().getUser().getUsername()))
+                return new ArrayList<>();
+
             return sessionRequestRepository.findByTeacherProfile(teacherProfile.get());
         }
         else return new ArrayList<>();
     }
 
-    public String acceptRequest(SessionActionDTO sessionActionDTO){
+    public String acceptRequest(SessionActionDTO sessionActionDTO,Authentication authentication){
         Optional<SessionRequest> session = sessionRequestRepository.findById(sessionActionDTO.getSessionRequestId());
         Optional<TeacherProfile> teacher = teacherProfileRepository.findById(sessionActionDTO.getTeacherProfileId());
 
 
         if(session.isPresent()&&teacher.isPresent()&&session.get().getTeacherProfile().getId().equals(teacher.get().getId())){
+
+            if(!ownership(authentication,teacher.get().getUser().getUsername()))return "Teacher not matched ";
 
             if(!session.get().getStatus().equals("PENDING")){
                 return "ALREADY PROCESSED";
@@ -96,11 +123,13 @@ public class SessionRequestService {
         return "Session or Teacher not found ";
     }
 
-    public String rejectRequest(SessionActionDTO sessionActionDTO){
+    public String rejectRequest(SessionActionDTO sessionActionDTO ,Authentication authentication){
         Optional<SessionRequest> session = sessionRequestRepository.findById(sessionActionDTO.getSessionRequestId());
         Optional<TeacherProfile> teacher = teacherProfileRepository.findById(sessionActionDTO.getTeacherProfileId());
 
         if(session.isPresent()&&teacher.isPresent()&&session.get().getTeacherProfile().getId().equals(teacher.get().getId())){
+
+            if(!ownership(authentication,teacher.get().getUser().getUsername()))return "Teacher not matched ";
 
             if(!session.get().getStatus().equals("PENDING")){
                 return "ALREADY PROCESSED";
@@ -113,12 +142,14 @@ public class SessionRequestService {
         return "Session or Teacher not found ";
     }
 
-    public boolean deleteSession( Long id){
+    public boolean deleteSession( Long id,Authentication authentication){
 
         Optional<SessionRequest> session = sessionRequestRepository.findById(id);
 
         if(session.isPresent()){
+            StudentProfile studentProfile = session.get().getStudentProfile();
 
+            if(!ownership(authentication,studentProfile.getUser().getUsername()))return false;
             sessionRequestRepository.delete(session.get());
 
             return true;
@@ -129,17 +160,28 @@ public class SessionRequestService {
 
     }
 
-    public String getStatus(Long id){
+    public String getStatus(Long id, Authentication authentication){
+
         Optional<SessionRequest> sessionRequest = sessionRequestRepository.findById(id);
+
         if(sessionRequest.isPresent()){
+            String studentUsername = sessionRequest.get().getStudentProfile().getUser().getUsername();
+            String teacherUsername = sessionRequest.get().getTeacherProfile().getUser().getUsername();
+
+            if(!ownership(authentication, studentUsername) && !ownership(authentication, teacherUsername))
+                return "Some mismatch in request occurred ";
+
             return sessionRequest.get().getStatus();
         }
         return "NOT FOUND";
     }
-
-    public Boolean updateSession(Long id, UpdateSessionDTO dto){
+    public Boolean updateSession(Long id, UpdateSessionDTO dto,Authentication authentication){
         Optional<SessionRequest> oldRequest = sessionRequestRepository.findById(id);
         if(oldRequest.isPresent()){
+
+            if(!ownership(authentication,oldRequest.get().getStudentProfile().getUser().getUsername()))
+                return false;
+
             oldRequest.get().setSubject(dto.getSubject());
             oldRequest.get().setDescription(dto.getDescription());
             sessionRequestRepository.save(oldRequest.get());

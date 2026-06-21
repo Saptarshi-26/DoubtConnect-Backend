@@ -1,11 +1,14 @@
 package com.saptarshi.doubtconnect.controller;
 
+import com.saptarshi.doubtconnect.dto.SignUpRequest;
 import com.saptarshi.doubtconnect.dto.UpdateUserDto;
 import com.saptarshi.doubtconnect.entity.User;
+import com.saptarshi.doubtconnect.repository.UserRepository;
 import com.saptarshi.doubtconnect.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

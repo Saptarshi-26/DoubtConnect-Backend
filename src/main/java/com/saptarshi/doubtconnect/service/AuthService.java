@@ -50,9 +50,7 @@ public class AuthService {
             return "INVALID PASSWORD";
         }
 
-        if(userRepository.findByUsername(loginRequest.getUsername()).isPresent()){
-            return "Username already exists";
-        }
+
 
         return jwtUtil.generateToken(
                 user.get().getUsername());
@@ -60,6 +58,11 @@ public class AuthService {
 
     @Transactional
     public String signUp(SignUpRequest sign){
+
+        if(userRepository.findByUsername(sign.getUsername()).isPresent()){
+            return "Username already exists";
+        }
+
         User user = new User();
         user.setRole(sign.getRole());
         user.setUsername(sign.getUsername());
@@ -80,7 +83,7 @@ public class AuthService {
             studentProfile.setLanguage(sign.getLanguage());
             studentProfileRepository.save(studentProfile);
         }
-        else {
+        else if(user.getRole().equals("TEACHER")){
             TeacherProfile teacherProfile = new TeacherProfile();
             teacherProfile.setUser(user);
             teacherProfile.setBio(sign.getBio());
@@ -89,6 +92,8 @@ public class AuthService {
             teacherProfile.setRatePerThirtyMin(sign.getRatePerThirtyMin());
             teacherProfileRepository.save(teacherProfile);
 
+        } else if (user.getRole().equals("ADMIN")) {
+            return "ADMIN CREATION NOT ALLOWED";
         }
 
         return "Successfully registered ";
