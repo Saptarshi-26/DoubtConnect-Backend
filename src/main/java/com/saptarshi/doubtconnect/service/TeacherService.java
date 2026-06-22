@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.service;
 
+import com.saptarshi.doubtconnect.dto.RatingDto;
 import com.saptarshi.doubtconnect.dto.SubjectDTO;
 import com.saptarshi.doubtconnect.dto.UpdateBioDTO;
 import com.saptarshi.doubtconnect.dto.UpdateRateDTO;
@@ -23,6 +24,27 @@ public class TeacherService {
     @Autowired
     private UserRepository userRepository;
 
+    public double rate(long id, RatingDto dto){
+        Optional<TeacherProfile> teacherProfile = teacherProfileRepository.findById(id);
+        if(teacherProfile.isPresent()&&(dto.getRating()>=1&&dto.getRating()<=5)){
+
+            teacherProfile.get().setTotalRating(
+                    teacherProfile.get().getTotalRating()+dto.getRating());
+
+            teacherProfile.get().setNumberOfRatings(
+                    teacherProfile.get().getNumberOfRatings()+1);
+
+            teacherProfile.get().setRating(
+                    (double)teacherProfile.get().getTotalRating()/
+                            teacherProfile.get().getNumberOfRatings());
+
+            teacherProfileRepository.save(teacherProfile.get());
+
+        return teacherProfile.get().getRating();
+
+        }
+        return -1;
+    }
 
     public List<TeacherProfile> findAll(){
         return teacherProfileRepository.findAll();

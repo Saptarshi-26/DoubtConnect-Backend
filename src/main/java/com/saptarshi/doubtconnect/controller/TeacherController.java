@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.controller;
 
+import com.saptarshi.doubtconnect.dto.RatingDto;
 import com.saptarshi.doubtconnect.dto.SubjectDTO;
 import com.saptarshi.doubtconnect.dto.UpdateBioDTO;
 import com.saptarshi.doubtconnect.dto.UpdateRateDTO;

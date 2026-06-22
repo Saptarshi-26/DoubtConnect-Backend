@@ -32,6 +32,15 @@ public class TeacherProfile {
     @Column(nullable = false)
     private double ratePerThirtyMin;
 
+    @Column(nullable = false)
+    private int totalRating = 5;
+
+    @Column(nullable = false)
+    private int numberOfRatings = 1;
+
+    @Column(nullable = false)
+    private double rating=5;
+
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

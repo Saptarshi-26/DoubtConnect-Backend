@@ -28,6 +28,10 @@ public class SessionRequest {
     @Column(nullable = false)
     private int sessionDuration;
 
+    @OneToOne
+    @JoinColumn(name="payment_id")
+    private Payment payment;
+
     @Column(nullable = false)
     private double totalAmount;
 

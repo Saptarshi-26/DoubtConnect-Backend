@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**")
                         .permitAll()
 
+
                         // Anyone can view teachers
                         .requestMatchers(
                                 HttpMethod.GET,
@@ -68,6 +69,9 @@ public class SecurityConfig {
                                 "/teacher/**")
                         .hasAnyRole("ADMIN","TEACHER")
 
+                        .requestMatchers("/teacher/rating/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
                         .requestMatchers("/user/**")
                         .hasRole("ADMIN")
 
@@ -80,6 +84,9 @@ public class SecurityConfig {
 
 
                         .requestMatchers(HttpMethod.POST,"/session/save/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+                        .requestMatchers("/session/payment/**")
                         .hasAnyRole("ADMIN","STUDENT")
 
                         .requestMatchers(HttpMethod.PUT,"/session/update/**")
