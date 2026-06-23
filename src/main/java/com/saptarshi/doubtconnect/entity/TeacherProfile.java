@@ -1,6 +1,7 @@
 package com.saptarshi.doubtconnect.entity;
 
 
+import com.saptarshi.doubtconnect.entity.payment.PayoutDetails;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,6 +46,9 @@ public class TeacherProfile {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="payout_details_id")
+    private PayoutDetails payoutDetails;
 
 
 }

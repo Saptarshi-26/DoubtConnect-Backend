@@ -1,9 +1,8 @@
-package com.saptarshi.doubtconnect.entity;
+package com.saptarshi.doubtconnect.entity.payment;
 
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,6 +28,9 @@ public class Payment {
 
     @Column(nullable = false)
     private LocalDateTime paymentTime;
+
+    @Column(nullable = false)
+    private String currency = "INR";
 
 
 }

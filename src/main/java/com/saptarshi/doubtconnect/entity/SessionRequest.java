@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.entity;
 
+import com.saptarshi.doubtconnect.entity.payment.Payment;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,12 +29,11 @@ public class SessionRequest {
     @Column(nullable = false)
     private int sessionDuration;
 
-    @OneToOne
-    @JoinColumn(name="payment_id")
-    private Payment payment;
-
     @Column(nullable = false)
     private double totalAmount;
+
+    @Column(nullable = false)
+    private String paymentStatus = "PENDING";
 
     @ManyToOne
     @JoinColumn(name = "teacher_id", nullable = false)
