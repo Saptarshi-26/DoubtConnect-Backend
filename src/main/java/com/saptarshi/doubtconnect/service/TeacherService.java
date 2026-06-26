@@ -1,11 +1,13 @@
 package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.*;
+import com.saptarshi.doubtconnect.entity.SessionRequest;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.entity.payment.BankDetails;
 import com.saptarshi.doubtconnect.entity.payment.PayoutDetails;
 import com.saptarshi.doubtconnect.entity.payment.UpiDetails;
+import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
 import com.saptarshi.doubtconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class TeacherService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SessionRequestRepository sessionRequestRepository;
 
     private boolean isOwner(TeacherProfile teacher, String username) {
 
@@ -45,6 +50,7 @@ public class TeacherService {
                     UpiDetails upiDetails = new UpiDetails();
                     upiDetails.setUpiId(detailsDto.getUpiId());
                     payoutDetails.setUpiDetails(upiDetails);
+                    payoutDetails.setBankDetails(null);
                 } else {
                     if (detailsDto.getAccountNumber() == null ||
                             detailsDto.getIfscCode() == null ||
@@ -56,6 +62,7 @@ public class TeacherService {
                     bankDetails.setIfscCode(detailsDto.getIfscCode());
                     bankDetails.setAccountHolderName(detailsDto.getAccountHolderName());
                     payoutDetails.setBankDetails(bankDetails);
+                    payoutDetails.setUpiDetails(null);
                 }
                 payoutDetails.setAccountStatus("ACTIVE");
                 profile.get().setPayoutDetails(payoutDetails);
@@ -71,21 +78,25 @@ public class TeacherService {
         Optional<TeacherProfile> profile = teacherProfileRepository.findById(id);
         if(profile.isPresent() && isOwner(profile.get(),username)){
             if(profile.get().getPayoutDetails()!=null){
-                PayoutDetails payoutDetails;
+                PayoutDetails payoutDetails = profile.get().getPayoutDetails();
                 if(detailsDto.getUpiId()!=null && !detailsDto.getUpiId().isEmpty()){
                     UpiDetails upiDetails = new UpiDetails();
                     upiDetails.setUpiId(detailsDto.getUpiId());
-                    payoutDetails = new PayoutDetails();
                     payoutDetails.setUpiDetails(upiDetails);
-                    profile.get().setPayoutDetails(payoutDetails);
+                    payoutDetails.setBankDetails(null);
                 }
                 else {
+                    if (detailsDto.getAccountNumber() == null ||
+                            detailsDto.getIfscCode() == null ||
+                            detailsDto.getAccountHolderName() == null) {
+                        return "Please provide complete bank details";
+                    }
                     BankDetails bankDetails = new BankDetails();
                     bankDetails.setAccountHolderName(detailsDto.getAccountHolderName());
                     bankDetails.setAccountNumber(detailsDto.getAccountNumber());
                     bankDetails.setIfscCode(detailsDto.getIfscCode());
-                    payoutDetails = new PayoutDetails();
                     payoutDetails.setBankDetails(bankDetails);
+                    payoutDetails.setUpiDetails(null);
                 }
                 profile.get().setPayoutDetails(payoutDetails);
                 teacherProfileRepository.save(profile.get());
@@ -96,23 +107,6 @@ public class TeacherService {
         else return "Profile not found ";
     }
 
-    public double rate(long id, RatingDto dto) {
-        Optional<TeacherProfile> teacherProfile = teacherProfileRepository.findById(id);
-        if (teacherProfile.isPresent() && (dto.getRating() >= 1 && dto.getRating() <= 5)) {
-
-            teacherProfile.get().setTotalRating(teacherProfile.get().getTotalRating() + dto.getRating());
-
-            teacherProfile.get().setNumberOfRatings(teacherProfile.get().getNumberOfRatings() + 1);
-
-            teacherProfile.get().setRating((double) teacherProfile.get().getTotalRating() / teacherProfile.get().getNumberOfRatings());
-
-            teacherProfileRepository.save(teacherProfile.get());
-
-            return teacherProfile.get().getRating();
-
-        }
-        return -1;
-    }
 
     public List<TeacherProfile> findAll() {
         return teacherProfileRepository.findAll().stream().filter(x -> x.getPayoutDetails() != null && x.getPayoutDetails().getAccountStatus().equals("ACTIVE")).toList();

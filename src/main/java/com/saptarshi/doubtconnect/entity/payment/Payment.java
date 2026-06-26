@@ -2,11 +2,13 @@ package com.saptarshi.doubtconnect.entity.payment;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "Payment")
 public class Payment {
 
@@ -14,7 +16,7 @@ public class Payment {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String transactionId;
 
     @Column(nullable = false)
@@ -23,10 +25,10 @@ public class Payment {
     @Column(nullable = false)
     private String paymentStatus;
 
-    @Column(nullable = false)
+
     private double amount;
 
-    @Column(nullable = false)
+
     private LocalDateTime paymentTime;
 
     @Column(nullable = false)

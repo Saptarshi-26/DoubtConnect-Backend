@@ -69,7 +69,7 @@ public class SecurityConfig {
                                 "/teacher/**")
                         .hasAnyRole("ADMIN","TEACHER")
 
-                        .requestMatchers("/teacher/rating/**")
+                        .requestMatchers("/feedback/rate/**")
                         .hasAnyRole("ADMIN","STUDENT")
 
                         .requestMatchers("/user/**")
@@ -100,6 +100,32 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST,"/session/reject/**")
                         .hasAnyRole("ADMIN","TEACHER")
+
+                        .requestMatchers("/payment/order/**")
+                        .hasAnyRole("ADMIN","STUDENT")
+
+                        .requestMatchers("/google/**")
+                        .permitAll()
+
+                        .requestMatchers("/payment/webhook")
+                        .permitAll()
+
+                                // Feedback
+                                .requestMatchers(HttpMethod.POST, "/feedback/rate/**")
+                                .hasAnyRole("ADMIN", "STUDENT")
+
+                                .requestMatchers(HttpMethod.POST, "/feedback/review/**")
+                                .hasAnyRole("ADMIN", "STUDENT")
+
+                                .requestMatchers(HttpMethod.GET, "/feedback/**")
+                                .permitAll()
+
+// Session Events
+                                .requestMatchers(HttpMethod.GET, "/session-event/student/**")
+                                .hasAnyRole("ADMIN", "STUDENT")
+
+                                .requestMatchers(HttpMethod.GET, "/session-event/teacher/**")
+                                .hasAnyRole("ADMIN", "TEACHER")
 
 
                         // Everything else requires login

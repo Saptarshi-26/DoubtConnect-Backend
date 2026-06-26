@@ -32,6 +32,9 @@ public class SessionEvent {
     @Column
     private String meetLink;
 
+    @Column(nullable = false)
+    private boolean rated = false;
+
     @ManyToOne
     @JoinColumn(name = "studentProfile_id")
     private StudentProfile studentProfile;
@@ -39,4 +42,5 @@ public class SessionEvent {
     @ManyToOne
     @JoinColumn(name = "teacherProfile_id")
     private TeacherProfile teacherProfile;
+
 }
