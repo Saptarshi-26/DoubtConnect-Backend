@@ -3,23 +3,26 @@ package com.saptarshi.doubtconnect.controller;
 import com.saptarshi.doubtconnect.google.GoogleOAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/google")
+@RequestMapping("/oauth/google")
 public class GoogleOAuthController {
 
     @Autowired
     private GoogleOAuthService googleOAuthService;
 
     @GetMapping("/connect")
-    public ResponseEntity<Void> connectGoogle() {
+    public ResponseEntity<Void> connectGoogle(  @RequestParam Long teacherProfileId) {
 
         return ResponseEntity
                 .status(302)
-                .header("Location", googleOAuthService.getAuthorizationUrl())
+                .header("Location", googleOAuthService.getAuthorizationUrl(teacherProfileId))
                 .build();
     }
+
+    @GetMapping("/callback")
+    public String callback(@RequestParam("code") String code ,
+                           @RequestParam("state") Long teacherProfileId){
+        return googleOAuthService.exchangeCodeForAccessToken(code,teacherProfileId);    }
 }

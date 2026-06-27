@@ -104,7 +104,7 @@ public class SecurityConfig {
                         .requestMatchers("/payment/order/**")
                         .hasAnyRole("ADMIN","STUDENT")
 
-                        .requestMatchers("/google/**")
+                        .requestMatchers("/oauth/google/**")
                         .permitAll()
 
                         .requestMatchers("/payment/webhook")
