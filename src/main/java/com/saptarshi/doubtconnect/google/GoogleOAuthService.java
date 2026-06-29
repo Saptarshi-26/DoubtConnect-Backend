@@ -1,8 +1,6 @@
 package com.saptarshi.doubtconnect.google;
 
-import com.saptarshi.doubtconnect.entity.GoogleCredential;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
-import com.saptarshi.doubtconnect.repository.GoogleCredentialRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;

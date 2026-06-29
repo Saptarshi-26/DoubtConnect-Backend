@@ -1,6 +1,5 @@
 package com.saptarshi.doubtconnect.controller;
 
-import com.saptarshi.doubtconnect.dto.PaymentDto;
 import com.saptarshi.doubtconnect.dto.SessionActionDTO;
 import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
 import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
@@ -42,7 +41,7 @@ public class SessionRequestController {
                                                                  Authentication authentication
                                                                  ){
 
-        List<SessionRequest> listSessionRequest = service.findTeacherProfile(id,authentication);
+        List<SessionRequest> listSessionRequest = service.findByTeacherProfile(id,authentication);
         return listSessionRequest.isEmpty()?new ResponseEntity<>(listSessionRequest,HttpStatus.NOT_FOUND):
                 new ResponseEntity<>(listSessionRequest,HttpStatus.OK);
     }

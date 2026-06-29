@@ -1,6 +1,6 @@
 package com.saptarshi.doubtconnect.entity;
 
-import com.saptarshi.doubtconnect.entity.payment.Payment;
+import com.saptarshi.doubtconnect.payment.entity.SessionPaymentDetails;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -17,8 +17,12 @@ public class SessionEvent {
     @OneToOne
     private SessionRequest sessionRequest;
 
-    @OneToOne
-    private Payment payment;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "session_payment_details_id")
+    private SessionPaymentDetails sessionPaymentDetails;
+
+    @Column(nullable = false)
+    private boolean paymentAvailable = false;
 
     @Column(nullable = false)
     private String eventStatus = "UPCOMING";

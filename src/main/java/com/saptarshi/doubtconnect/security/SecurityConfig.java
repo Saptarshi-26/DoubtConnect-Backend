@@ -107,8 +107,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth/google/**")
                         .permitAll()
 
-                        .requestMatchers("/payment/webhook")
-                        .permitAll()
+
 
                                 // Feedback
                                 .requestMatchers(HttpMethod.POST, "/feedback/rate/**")

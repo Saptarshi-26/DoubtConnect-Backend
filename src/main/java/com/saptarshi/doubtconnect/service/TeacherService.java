@@ -1,18 +1,13 @@
 package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.*;
-import com.saptarshi.doubtconnect.entity.SessionRequest;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.entity.User;
-import com.saptarshi.doubtconnect.entity.payment.BankDetails;
-import com.saptarshi.doubtconnect.entity.payment.PayoutDetails;
-import com.saptarshi.doubtconnect.entity.payment.UpiDetails;
 import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
 import com.saptarshi.doubtconnect.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,75 +32,6 @@ public class TeacherService {
     }
 
 
-    @Transactional
-    public String savePayoutDetails(long id, PayOutDetailsDto detailsDto, String username) {
-        Optional<TeacherProfile> profile = teacherProfileRepository.findById(id);
-        if (profile.isPresent() && isOwner(profile.get(), username)) {
-            if (profile.get().getPayoutDetails() == null || profile.get().getPayoutDetails().getAccountStatus().equals("INACTIVE")) {
-                PayoutDetails payoutDetails = profile.get().getPayoutDetails();
-                if (payoutDetails == null) {
-                    payoutDetails = new PayoutDetails();
-                }
-                if (detailsDto.getUpiId()!=null && !detailsDto.getUpiId().isEmpty()) {
-                    UpiDetails upiDetails = new UpiDetails();
-                    upiDetails.setUpiId(detailsDto.getUpiId());
-                    payoutDetails.setUpiDetails(upiDetails);
-                    payoutDetails.setBankDetails(null);
-                } else {
-                    if (detailsDto.getAccountNumber() == null ||
-                            detailsDto.getIfscCode() == null ||
-                            detailsDto.getAccountHolderName() == null) {
-                        return "Please provide either UPI ID or complete bank details";
-                    }
-                    BankDetails bankDetails = new BankDetails();
-                    bankDetails.setAccountNumber(detailsDto.getAccountNumber());
-                    bankDetails.setIfscCode(detailsDto.getIfscCode());
-                    bankDetails.setAccountHolderName(detailsDto.getAccountHolderName());
-                    payoutDetails.setBankDetails(bankDetails);
-                    payoutDetails.setUpiDetails(null);
-                }
-                payoutDetails.setAccountStatus("ACTIVE");
-                profile.get().setPayoutDetails(payoutDetails);
-                teacherProfileRepository.save(profile.get());
-            } else return "Account details already saved ";
-        } else return "Profile not found ";
-
-        return "Account details added successfully ";
-    }
-
-    @Transactional
-    public String updatePaymentDetails(long id , PayOutDetailsDto detailsDto , String username){
-        Optional<TeacherProfile> profile = teacherProfileRepository.findById(id);
-        if(profile.isPresent() && isOwner(profile.get(),username)){
-            if(profile.get().getPayoutDetails()!=null){
-                PayoutDetails payoutDetails = profile.get().getPayoutDetails();
-                if(detailsDto.getUpiId()!=null && !detailsDto.getUpiId().isEmpty()){
-                    UpiDetails upiDetails = new UpiDetails();
-                    upiDetails.setUpiId(detailsDto.getUpiId());
-                    payoutDetails.setUpiDetails(upiDetails);
-                    payoutDetails.setBankDetails(null);
-                }
-                else {
-                    if (detailsDto.getAccountNumber() == null ||
-                            detailsDto.getIfscCode() == null ||
-                            detailsDto.getAccountHolderName() == null) {
-                        return "Please provide complete bank details";
-                    }
-                    BankDetails bankDetails = new BankDetails();
-                    bankDetails.setAccountHolderName(detailsDto.getAccountHolderName());
-                    bankDetails.setAccountNumber(detailsDto.getAccountNumber());
-                    bankDetails.setIfscCode(detailsDto.getIfscCode());
-                    payoutDetails.setBankDetails(bankDetails);
-                    payoutDetails.setUpiDetails(null);
-                }
-                profile.get().setPayoutDetails(payoutDetails);
-                teacherProfileRepository.save(profile.get());
-                return "Update successful ";
-            }
-            else return "No existing payment details found , need to add payment details first ";
-        }
-        else return "Profile not found ";
-    }
 
 
     public List<TeacherProfile> findAll() {

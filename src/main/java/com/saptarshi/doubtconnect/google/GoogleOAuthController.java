@@ -1,6 +1,5 @@
-package com.saptarshi.doubtconnect.controller;
+package com.saptarshi.doubtconnect.google;
 
-import com.saptarshi.doubtconnect.google.GoogleOAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +10,10 @@ public class GoogleOAuthController {
 
     @Autowired
     private GoogleOAuthService googleOAuthService;
+
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
+
 
     @GetMapping("/connect")
     public ResponseEntity<Void> connectGoogle(  @RequestParam Long teacherProfileId) {
@@ -25,4 +28,9 @@ public class GoogleOAuthController {
     public String callback(@RequestParam("code") String code ,
                            @RequestParam("state") Long teacherProfileId){
         return googleOAuthService.exchangeCodeForAccessToken(code,teacherProfileId);    }
+
+    @GetMapping("/events")
+    public void events(@RequestParam Long teacherProfileId) {
+        googleCalendarService.getCalendarEvents(teacherProfileId);
+    }
 }

@@ -1,4 +1,4 @@
-package com.saptarshi.doubtconnect.entity.payment;
+package com.saptarshi.doubtconnect.payment.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.saptarshi.doubtconnect.security.AesEncryptor;

@@ -1,7 +1,7 @@
 package com.saptarshi.doubtconnect.entity;
 
 
-import com.saptarshi.doubtconnect.entity.payment.PayoutDetails;
+import com.saptarshi.doubtconnect.payment.entity.PayoutDetails;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

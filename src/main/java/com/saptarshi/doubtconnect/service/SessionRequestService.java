@@ -1,17 +1,10 @@
 package com.saptarshi.doubtconnect.service;
 
-import com.saptarshi.doubtconnect.dto.PaymentDto;
 import com.saptarshi.doubtconnect.dto.SessionActionDTO;
 import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
 import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
-import com.saptarshi.doubtconnect.entity.SessionRequest;
-import com.saptarshi.doubtconnect.entity.StudentProfile;
-import com.saptarshi.doubtconnect.entity.TeacherProfile;
-import com.saptarshi.doubtconnect.entity.User;
-import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
-import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
-import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
-import com.saptarshi.doubtconnect.repository.UserRepository;
+import com.saptarshi.doubtconnect.entity.*;
+import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -26,16 +19,24 @@ import java.util.Optional;
 public class SessionRequestService {
 
     @Autowired
-    UserRepository userRepository ;
+    private UserRepository userRepository ;
 
     @Autowired
-    SessionRequestRepository sessionRequestRepository;
+    private SessionRequestRepository sessionRequestRepository;
 
     @Autowired
-    StudentProfileRepository studentProfileRepository;
+    private StudentProfileRepository studentProfileRepository;
 
     @Autowired
-    TeacherProfileRepository teacherProfileRepository;
+    private TeacherProfileRepository teacherProfileRepository;
+
+
+    @Autowired
+    private SessionEventRepository sessionEventRepository;
+
+    @Autowired
+    private TeacherAvailabilityRepository teacherAvailabilityRepository;
+
 
     private boolean ownership(Authentication authentication, String username){
         Optional<User> user = userRepository.findByUsername(authentication.getName());
@@ -92,7 +93,7 @@ public class SessionRequestService {
         return new ArrayList<>();
     }
 
-    public List<SessionRequest> findTeacherProfile(Long id,Authentication authentication){
+    public List<SessionRequest> findByTeacherProfile(Long id,Authentication authentication){
         Optional<TeacherProfile> teacherProfile = teacherProfileRepository.findById(id);
         if(teacherProfile.isPresent()) {
 
@@ -143,23 +144,59 @@ public class SessionRequestService {
         return "Session or Teacher not found ";
     }
 
-    public boolean deleteSession( Long id,Authentication authentication){
+    @Transactional
+    public boolean deleteSession(Long id,
+                                 Authentication authentication) {
 
-        Optional<SessionRequest> session = sessionRequestRepository.findById(id);
+        Optional<SessionRequest> session =
+                sessionRequestRepository.findById(id);
 
-        if(session.isPresent()){
-            StudentProfile studentProfile = session.get().getStudentProfile();
-
-            if(!ownership(authentication,studentProfile.getUser().getUsername()))return false;
-            sessionRequestRepository.delete(session.get());
-
-            return true;
-
+        if (session.isEmpty()) {
+            return false;
         }
 
-        return false;
+        if (!ownership(authentication,
+                session.get().getStudentProfile()
+                        .getUser().getUsername())) {
 
+            return false;
+        }
+
+        Optional<SessionEvent> event =
+                sessionEventRepository.findBySessionRequest(session.get());
+
+        if (event.isPresent()) {
+            if (!"UPCOMING".equals(event.get().getEventStatus())) {
+                return false;
+            }
+
+            TeacherProfile teacher = event.get().getTeacherProfile();
+
+            Optional<TeacherAvailability> slot =
+                    teacherAvailabilityRepository
+                            .findByTeacherProfileAndStartTimeAndEndTime(
+                                    teacher,
+                                    event.get().getStartTime(),
+                                    event.get().getEndTime());
+
+            if (slot.isPresent()) {
+
+                slot.get().setBooked(false);
+                slot.get().setAvailable(true);
+
+                teacherAvailabilityRepository.save(slot.get());
+            }
+
+            sessionEventRepository.delete(event.get());
+        }
+
+        sessionRequestRepository.delete(session.get());
+
+        return true;
     }
+
+
+
 
     public String getStatus(Long id, Authentication authentication){
 

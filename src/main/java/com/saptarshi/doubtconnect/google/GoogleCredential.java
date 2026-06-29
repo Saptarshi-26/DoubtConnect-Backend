@@ -1,8 +1,8 @@
-package com.saptarshi.doubtconnect.entity;
+package com.saptarshi.doubtconnect.google;
 
+import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import jakarta.persistence.*;
 import lombok.Data;
-import org.checkerframework.checker.units.qual.C;
 
 @Entity
 @Data
@@ -16,6 +16,6 @@ public class GoogleCredential {
     private String refreshToken;
 
     @OneToOne
-    @JoinColumn(name = "teacherProfile_id")
+    @JoinColumn(name = "teacherProfile_id",unique = true)
     private TeacherProfile teacherProfile;
 }

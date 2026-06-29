@@ -1,7 +1,5 @@
-package com.saptarshi.doubtconnect.repository;
+package com.saptarshi.doubtconnect.google;
 
-import com.google.auth.oauth2.GdchCredentials;
-import com.saptarshi.doubtconnect.entity.GoogleCredential;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
