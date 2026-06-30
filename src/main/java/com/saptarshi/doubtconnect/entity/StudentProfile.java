@@ -19,6 +19,9 @@ public class StudentProfile {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column
+    private String profilePictureUrl;
+
     @Column(nullable = false)
     private String grade;
 

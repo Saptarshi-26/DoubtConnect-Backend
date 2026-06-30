@@ -1,6 +1,7 @@
 package com.saptarshi.doubtconnect.controller;
 
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
+import com.saptarshi.doubtconnect.dto.StudentDto;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.service.StudentService;
@@ -10,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +34,7 @@ public class StudentController {
     public ResponseEntity<?> findStudent(
             @PathVariable Long id, Authentication authentication){
 
-        Optional<StudentProfile> student =
+        Optional<StudentDto> student =
                 studentService.findStudent(id,authentication);
 
         return student.isPresent()
@@ -88,5 +91,24 @@ public class StudentController {
                 HttpStatus.OK)
                 : new ResponseEntity<>("Unauthorized",
                 HttpStatus.FORBIDDEN);
+    }
+
+    @PostMapping("/profile-picture")
+    public ResponseEntity<StudentProfile> uploadProfilePicture(
+            @RequestParam Long studentProfileId,
+            @RequestParam MultipartFile file,
+            Authentication authentication) throws IOException {
+
+        StudentProfile student =
+                studentService.uploadProfilePicture(
+                        studentProfileId,
+                        file,
+                        authentication);
+
+        if (student == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(student);
     }
 }

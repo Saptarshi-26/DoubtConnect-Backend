@@ -8,6 +8,17 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Table(
+        name = "session_event",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {
+                                "teacherProfile_id",
+                                "startTime"
+                        }
+                )
+        }
+)
 public class SessionEvent {
 
     @Id

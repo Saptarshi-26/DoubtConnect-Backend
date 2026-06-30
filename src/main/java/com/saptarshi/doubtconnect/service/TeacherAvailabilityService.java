@@ -5,10 +5,9 @@ import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.entity.TeacherAvailability;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.entity.User;
-import com.saptarshi.doubtconnect.repository.SessionEventRepository;
-import com.saptarshi.doubtconnect.repository.TeacherAvailabilityRepository;
-import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
-import com.saptarshi.doubtconnect.repository.UserRepository;
+import com.saptarshi.doubtconnect.google.GoogleCredential;
+import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
+import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -38,6 +37,12 @@ public class TeacherAvailabilityService {
     @Autowired
     private SessionEventRepository sessionEventRepository;
 
+    @Autowired
+    private SessionRequestRepository sessionRequestRepository;
+
+    @Autowired
+    private GoogleCredentialRepository googleCredentialRepository;
+
     private boolean isOwner(TeacherProfile teacher, String username) {
 
         Optional<User> user = userRepository.findByUsername(username);
@@ -45,23 +50,71 @@ public class TeacherAvailabilityService {
         return teacher.getUser().getUsername().equals(username)
                 || (user.isPresent() && "ADMIN".equals(user.get().getRole()));
     }
-    private List<TeacherAvailability> generateMonthlyAvailability(
-            TeacherProfile teacher) {
 
-        List<TeacherAvailability> existing =
-                teacherAvailabilityRepository.findByTeacherProfile(teacher);
 
-        if (!existing.isEmpty()) {
-            return existing;
+
+    @Transactional
+    public List<TeacherAvailability> generateMonthlyAvailability(
+            Long teacherProfileId,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+            teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return new ArrayList<>();
         }
+
+        if (!isOwner(teacher.get(), authentication.getName())) {
+            return new ArrayList<>();
+        }
+
+        Optional<GoogleCredential> credential =
+                googleCredentialRepository.findByTeacherProfile(teacher.get());
+
+        if (credential.isEmpty()) {
+            throw new RuntimeException("GOOGLE_NOT_CONNECTED");
+        }
+
 
         LocalDate today = LocalDate.now();
 
-        List<TeacherAvailability> slots = new ArrayList<>();
+        List<TeacherAvailability> futureSlots =
+                teacherAvailabilityRepository
+                        .findByTeacherProfileAndEndTimeAfter(
+                                teacher.get(),
+                                LocalDateTime.now());
+
+        LocalDate startDate;
+
+        if (futureSlots.isEmpty()) {
+
+            startDate = today;
+
+        } else {
+
+            TeacherAvailability lastSlot = futureSlots.stream()
+                    .max((a, b) -> a.getEndTime().compareTo(b.getEndTime()))
+                    .get();
+
+            LocalDate lastDate = lastSlot.getEndTime().toLocalDate();
+
+            long daysRemaining =
+                    java.time.temporal.ChronoUnit.DAYS
+                            .between(today, lastDate);
+
+            if (daysRemaining > 10) {
+                return new ArrayList<>();
+            }
+
+            startDate = lastDate.plusDays(1);
+        }
+
+        List<TeacherAvailability> newSlots = new ArrayList<>();
 
         for (int day = 0; day < 30; day++) {
 
-            LocalDate currentDate = today.plusDays(day);
+            LocalDate currentDate = startDate.plusDays(day);
 
             for (LocalTime time = LocalTime.of(9, 0);
                  time.isBefore(LocalTime.of(18, 0));
@@ -69,7 +122,7 @@ public class TeacherAvailabilityService {
 
                 TeacherAvailability slot = new TeacherAvailability();
 
-                slot.setTeacherProfile(teacher);
+                slot.setTeacherProfile(teacher.get());
 
                 slot.setStartTime(
                         LocalDateTime.of(currentDate, time));
@@ -79,54 +132,14 @@ public class TeacherAvailabilityService {
                                 currentDate,
                                 time.plusMinutes(30)));
 
-                slots.add(slot);
+                newSlots.add(slot);
             }
         }
 
-        return teacherAvailabilityRepository.saveAll(slots);
+        return teacherAvailabilityRepository.saveAll(newSlots);
     }
-    @Transactional
-    public List<TeacherAvailability> generateMonthlyAvailability(
-            Long teacherProfileId,
-            Authentication authentication) {
 
-        Optional<TeacherProfile> teacher =
-                teacherProfileRepository.findById(teacherProfileId);
 
-        if (teacher.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (!isOwner(teacher.get(), authentication.getName())) {
-            return new ArrayList<>();
-        }
-
-        return generateMonthlyAvailability(teacher.get());
-    }
-    public List<TeacherAvailability> getTeacherAvailability(
-            Long teacherProfileId,
-            Authentication authentication) {
-
-        Optional<TeacherProfile> teacher =
-                teacherProfileRepository.findById(teacherProfileId);
-
-        if (teacher.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (!isOwner(teacher.get(), authentication.getName())) {
-            return new ArrayList<>();
-        }
-
-        List<TeacherAvailability> slots =
-                teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
-
-        if (slots.isEmpty()) {
-            return generateMonthlyAvailability(teacher.get());
-        }
-
-        return slots;
-    }
     @Transactional
     public List<TeacherAvailability> makeSlotsAvailable(
             Long teacherProfileId,
@@ -147,10 +160,6 @@ public class TeacherAvailabilityService {
         List<TeacherAvailability> allSlots =
                 teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
 
-        if (allSlots.isEmpty()) {
-            allSlots = generateMonthlyAvailability(teacher.get());
-        }
-
         // Reset every non-booked slot
         for (TeacherAvailability slot : allSlots) {
 
@@ -159,7 +168,7 @@ public class TeacherAvailabilityService {
             }
         }
 
-        // Enable only selected slots
+        // Enable selected slots
         List<TeacherAvailability> selectedSlots =
                 teacherAvailabilityRepository.findAllById(slotIds);
 
@@ -174,6 +183,8 @@ public class TeacherAvailabilityService {
 
         return teacherAvailabilityRepository.saveAll(allSlots);
     }
+
+
     public List<TeacherAvailability> getAvailableSlots(
             Long teacherProfileId) {
 
@@ -184,17 +195,12 @@ public class TeacherAvailabilityService {
             return new ArrayList<>();
         }
 
-        List<TeacherAvailability> slots =
-                teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
-
-        if (slots.isEmpty()) {
-            generateMonthlyAvailability(teacher.get());
-        }
-
         return teacherAvailabilityRepository
                 .findByTeacherProfileAndAvailableTrueAndBookedFalse(
                         teacher.get());
     }
+
+
     @Transactional
     public boolean cancelSlots(
             Long teacherProfileId,
@@ -215,12 +221,6 @@ public class TeacherAvailabilityService {
         List<TeacherAvailability> slots =
                 teacherAvailabilityRepository.findAllById(slotIds);
 
-        List<SessionEvent> sessions =
-                sessionEventRepository.findByTeacherProfileAndEventStatus(
-                        teacher.get(),
-                        "UPCOMING"
-                );
-
         for (TeacherAvailability slot : slots) {
 
             if (!slot.getTeacherProfile().getId().equals(teacherProfileId)) {
@@ -231,25 +231,43 @@ public class TeacherAvailabilityService {
 
             if (slot.isBooked()) {
 
-                for (SessionEvent session : sessions) {
+                Optional<SessionEvent> session =
+                        sessionEventRepository
+                                .findByTeacherProfileAndStartTimeAndEndTime(
+                                        teacher.get(),
+                                        slot.getStartTime(),
+                                        slot.getEndTime());
 
-                    if (session.getStartTime().equals(slot.getStartTime())
-                            && session.getEndTime().equals(slot.getEndTime())) {
-
-                        session.setEventStatus("CANCELLED");
-                        break;
-                    }
+                if (session.isPresent()) {
+                    session.get().setEventStatus("CANCELLED");
+                    session.get().getSessionRequest().setStatus("CANCELLED");
+                    sessionRequestRepository.save(session.get().getSessionRequest());
+                    sessionEventRepository.save(session.get());
                 }
-
-                // Keep booked = true so the cancelled slot
-                // cannot be booked again accidentally.
             }
         }
 
         teacherAvailabilityRepository.saveAll(slots);
-        sessionEventRepository.saveAll(sessions);
 
         return true;
+    }
+
+    public List<TeacherAvailability> getTeacherAvailability(
+            Long teacherProfileId,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (!isOwner(teacher.get(), authentication.getName())) {
+            return new ArrayList<>();
+        }
+
+        return teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
     }
 
    }

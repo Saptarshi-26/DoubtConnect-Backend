@@ -33,6 +33,9 @@ public class TeacherProfile {
     @Column(nullable = false)
     private double ratePerThirtyMin;
 
+    @Column
+    private String profilePictureUrl;
+
     @Column(nullable = false)
     private int totalRating = 5;
 

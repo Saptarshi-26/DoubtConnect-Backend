@@ -11,8 +11,6 @@ public class GoogleOAuthController {
     @Autowired
     private GoogleOAuthService googleOAuthService;
 
-    @Autowired
-    private GoogleCalendarService googleCalendarService;
 
 
     @GetMapping("/connect")
@@ -27,10 +25,7 @@ public class GoogleOAuthController {
     @GetMapping("/callback")
     public String callback(@RequestParam("code") String code ,
                            @RequestParam("state") Long teacherProfileId){
-        return googleOAuthService.exchangeCodeForAccessToken(code,teacherProfileId);    }
+        return googleOAuthService.saveTeacherCredential(code,teacherProfileId);    }
 
-    @GetMapping("/events")
-    public void events(@RequestParam Long teacherProfileId) {
-        googleCalendarService.getCalendarEvents(teacherProfileId);
-    }
+
 }

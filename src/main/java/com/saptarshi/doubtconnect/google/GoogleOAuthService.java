@@ -54,7 +54,7 @@ public class GoogleOAuthService {
     }
 
     @Transactional
-    public String exchangeCodeForAccessToken(String code, Long teacherProfileId) {
+    public String saveTeacherCredential(String code, Long teacherProfileId) {
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -80,7 +80,6 @@ public class GoogleOAuthService {
 
         JSONObject json = new JSONObject(response.getBody());
 
-        String accessToken = json.getString("access_token");
         String refreshToken = json.optString("refresh_token", null);
 
         Optional<TeacherProfile> teacher =
@@ -108,5 +107,41 @@ public class GoogleOAuthService {
         }
 
         return "Google Calendar connected successfully";
+    }
+
+    public String getAccessToken(TeacherProfile teacherProfile) {
+
+        Optional<GoogleCredential> credential =
+                googleCredentialRepository.findByTeacherProfile(teacherProfile);
+
+        if (credential.isEmpty()) {
+            return null;
+        }
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        LinkedMultiValueMap<String, String> body =
+                new LinkedMultiValueMap<>();
+
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
+        body.add("refresh_token", credential.get().getRefreshToken());
+        body.add("grant_type", "refresh_token");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<LinkedMultiValueMap<String, String>> request =
+                new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://oauth2.googleapis.com/token",
+                request,
+                String.class
+        );
+
+        JSONObject json = new JSONObject(response.getBody());
+
+        return json.getString("access_token");
     }
 }

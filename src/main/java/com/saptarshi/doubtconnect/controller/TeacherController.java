@@ -1,9 +1,6 @@
 package com.saptarshi.doubtconnect.controller;
 
-import com.saptarshi.doubtconnect.dto.RatingDto;
-import com.saptarshi.doubtconnect.dto.SubjectDTO;
-import com.saptarshi.doubtconnect.dto.UpdateBioDTO;
-import com.saptarshi.doubtconnect.dto.UpdateRateDTO;
+import com.saptarshi.doubtconnect.dto.*;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -25,9 +24,20 @@ public class TeacherController {
 
     @GetMapping("/getAll")
     public ResponseEntity<?> findAll(){
-        List<TeacherProfile> profileList = teacherService.findAll();
+        List<TeacherDto> profileList = teacherService.findAll();
         return profileList.isEmpty()?new ResponseEntity<>("No teacher found",HttpStatus.OK):
                 new ResponseEntity<>(profileList,HttpStatus.OK);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TeacherDto>> searchBySubject(
+            @RequestParam String subject,
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                teacherService.searchBySubject(
+                        subject,
+                        authentication));
     }
 
 
@@ -35,7 +45,7 @@ public class TeacherController {
     public ResponseEntity<?> findTeacher(
             @PathVariable Long id){
 
-        Optional<TeacherProfile> teacher =
+        Optional<TeacherDto> teacher =
                 teacherService.findTeacher(id);
 
         return teacher.isPresent()
@@ -118,5 +128,24 @@ public class TeacherController {
                 HttpStatus.OK)
                 : new ResponseEntity<>("Unauthorized",
                 HttpStatus.FORBIDDEN);
+    }
+
+    @PostMapping("/profile-picture")
+    public ResponseEntity<TeacherProfile> uploadProfilePicture(
+            @RequestParam Long teacherProfileId,
+            @RequestParam MultipartFile file,
+            Authentication authentication) throws IOException {
+
+        TeacherProfile teacher =
+                teacherService.uploadProfilePicture(
+                        teacherProfileId,
+                        file,
+                        authentication);
+
+        if (teacher == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(teacher);
     }
 }
