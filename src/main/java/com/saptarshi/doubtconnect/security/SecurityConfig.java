@@ -36,100 +36,126 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+
+                        // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-
-                        // Public
+                        // Authentication
                         .requestMatchers("/auth/**")
                         .permitAll()
 
-
-                        // Anyone can view teachers
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/teacher/**")
-                        .permitAll()
-
-                        // Teacher only actions
-                        .requestMatchers(
-                                HttpMethod.PUT,
-                                "/teacher/**")
-                        .hasAnyRole("ADMIN","TEACHER")
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/teacher/**")
-                        .hasAnyRole("ADMIN","TEACHER")
-
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/teacher/**")
-                        .hasAnyRole("ADMIN","TEACHER")
-
-                        .requestMatchers("/feedback/rate/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        // -------------------- ADMIN --------------------
 
                         .requestMatchers("/user/**")
                         .hasRole("ADMIN")
 
-                        // Student endpoints
-                        .requestMatchers("/student/**")
-                        .hasAnyRole("ADMIN","STUDENT")
-
                         .requestMatchers("/student/all/**")
                         .hasRole("ADMIN")
 
+                        // -------------------- PUBLIC TEACHER --------------------
 
-                        .requestMatchers(HttpMethod.POST,"/session/save/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/teacher/getAll",
+                                "/teacher/*"
+                        ).permitAll()
 
-                        .requestMatchers("/session/payment/**")
-                        .hasAnyRole("ADMIN","STUDENT")
 
-                        .requestMatchers(HttpMethod.PUT,"/session/update/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/feedback/**"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.DELETE,"/session/delete/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        // -------------------- TEACHER --------------------
 
-                        .requestMatchers(HttpMethod.POST,"/session/accept/**")
-                        .hasAnyRole("ADMIN","TEACHER")
+                        .requestMatchers("/teacher/**")
+                        .hasAnyRole("ADMIN", "TEACHER")
 
-                        .requestMatchers(HttpMethod.POST,"/session/reject/**")
-                        .hasAnyRole("ADMIN","TEACHER")
-
-                        .requestMatchers("/payment/order/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        .requestMatchers("/teacher-availability/**")
+                        .hasAnyRole("ADMIN", "TEACHER")
 
                         .requestMatchers("/oauth/google/**")
-                        .permitAll()
+                        .hasAnyRole("ADMIN", "TEACHER")
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/session/accept/**",
+                                "/session/reject/**"
+                        )
+                        .hasAnyRole("ADMIN", "TEACHER")
 
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session/teacher/**"
+                        )
+                        .hasAnyRole("ADMIN", "TEACHER")
 
-                                // Feedback
-                                .requestMatchers(HttpMethod.POST, "/feedback/rate/**")
-                                .hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session-event/teacher/**"
+                        )
+                        .hasAnyRole("ADMIN", "TEACHER")
 
-                                .requestMatchers(HttpMethod.POST, "/feedback/review/**")
-                                .hasAnyRole("ADMIN", "STUDENT")
+                        // -------------------- STUDENT --------------------
 
-                                .requestMatchers(HttpMethod.GET, "/feedback/**")
-                                .permitAll()
+                        .requestMatchers("/student/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
 
-// Session Events
-                                .requestMatchers(HttpMethod.GET, "/session-event/student/**")
-                                .hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers("/slot-booking/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
 
-                                .requestMatchers(HttpMethod.GET, "/session-event/teacher/**")
-                                .hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/payment/order/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
 
+                        .requestMatchers("/session/payment/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
 
-                        // Everything else requires login
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/session/save/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/session/update/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/session/delete/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session/student/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session-event/student/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/feedback/rate/**",
+                                "/feedback/review/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        // -------------------- EVERYTHING ELSE --------------------
+
                         .anyRequest()
                         .authenticated()
+
+
                 )
 
                 .addFilterBefore(

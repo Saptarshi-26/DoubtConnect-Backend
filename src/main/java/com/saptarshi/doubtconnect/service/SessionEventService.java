@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.service;
 
+import com.saptarshi.doubtconnect.dto.SessionEventResponseDto;
 import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
@@ -46,36 +47,131 @@ public class SessionEventService {
                 (user.isPresent() && user.get().getRole().equals("ADMIN"));
     }
 
-    public List<SessionEvent> getStudentSessions(long studentId,
-                                                 Authentication authentication) {
+    public List<SessionEventResponseDto> getStudentSessions(
+            long studentId,
+            Authentication authentication) {
 
-        Optional<StudentProfile> student = studentProfileRepository.findById(studentId);
+        Optional<StudentProfile> student =
+                studentProfileRepository.findById(studentId);
 
         if (student.isEmpty())
             return new ArrayList<>();
 
-        if (!ownerShip(student.get().getUser().getUsername(), authentication))
+        if (!ownerShip(
+                student.get().getUser().getUsername(),
+                authentication))
             return new ArrayList<>();
 
-        return sessionEventRepository.findByStudentProfile(student.get());
+        return sessionEventRepository.findByStudentProfile(student.get())
+                .stream()
+                .map(event -> {
+
+                    SessionEventResponseDto dto = new SessionEventResponseDto();
+
+                    dto.setId(event.getId());
+
+                    dto.setSessionRequestId(
+                            event.getSessionRequest().getId());
+
+                    dto.setStudentId(
+                            event.getStudentProfile().getId());
+
+                    dto.setStudentName(
+                            event.getStudentProfile().getUser().getUsername());
+
+                    dto.setStudentProfilePictureUrl(
+                            event.getStudentProfile().getProfilePictureUrl());
+
+                    dto.setTeacherId(
+                            event.getTeacherProfile().getId());
+
+                    dto.setTeacherName(
+                            event.getTeacherProfile().getUser().getUsername());
+
+                    dto.setTeacherProfilePictureUrl(
+                            event.getTeacherProfile().getProfilePictureUrl());
+
+                    dto.setStartTime(event.getStartTime());
+                    dto.setEndTime(event.getEndTime());
+                    dto.setMeetLink(event.getMeetLink());
+                    dto.setPaymentAvailable(event.isPaymentAvailable());
+                    dto.setEventStatus(event.getEventStatus());
+                    dto.setRated(event.isRated());
+
+                    return dto;
+
+                }).toList();
     }
 
-    public List<SessionEvent> getTeacherSessions(long teacherId,
-                                                 Authentication authentication) {
+    public List<SessionEventResponseDto> getTeacherSessions(
+            long teacherId,
+            Authentication authentication) {
 
-        Optional<TeacherProfile> teacher = teacherProfileRepository.findById(teacherId);
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherId);
 
         if (teacher.isEmpty())
             return new ArrayList<>();
 
-        if (!ownerShip(teacher.get().getUser().getUsername(), authentication))
+        if (!ownerShip(
+                teacher.get().getUser().getUsername(),
+                authentication))
             return new ArrayList<>();
 
-        return sessionEventRepository.findByTeacherProfile(teacher.get());
+        return sessionEventRepository.findByTeacherProfile(teacher.get())
+                .stream()
+                .map(event -> {
+
+                    SessionEventResponseDto dto = new SessionEventResponseDto();
+
+                    dto.setId(event.getId());
+
+                    dto.setSessionRequestId(
+                            event.getSessionRequest().getId());
+
+                    dto.setStudentId(
+                            event.getStudentProfile().getId());
+
+                    dto.setStudentName(
+                            event.getStudentProfile().getUser().getUsername());
+
+                    dto.setStudentProfilePictureUrl(
+                            event.getStudentProfile().getProfilePictureUrl());
+
+                    dto.setTeacherId(
+                            event.getTeacherProfile().getId());
+
+                    dto.setTeacherName(
+                            event.getTeacherProfile().getUser().getUsername());
+
+                    dto.setTeacherProfilePictureUrl(
+                            event.getTeacherProfile().getProfilePictureUrl());
+
+                    dto.setStartTime(event.getStartTime());
+                    dto.setEndTime(event.getEndTime());
+                    dto.setMeetLink(event.getMeetLink());
+                    dto.setPaymentAvailable(event.isPaymentAvailable());
+                    dto.setEventStatus(event.getEventStatus());
+                    dto.setRated(event.isRated());
+
+                    return dto;
+
+                }).toList();
     }
 
-    public List<SessionEvent> getUpcomingStudentSessions(long studentId,
-                                                         Authentication authentication) {
+    public List<SessionEventResponseDto> getUpcomingTeacherSessions(
+            long teacherId,
+            Authentication authentication) {
+
+        return getTeacherSessions(teacherId, authentication)
+                .stream()
+                .filter(x -> x.getEventStatus().equals("UPCOMING"))
+                .toList();
+    }
+
+    public List<SessionEventResponseDto> getUpcomingStudentSessions(
+            long studentId,
+            Authentication authentication) {
 
         return getStudentSessions(studentId, authentication)
                 .stream()
@@ -83,14 +179,6 @@ public class SessionEventService {
                 .toList();
     }
 
-    public List<SessionEvent> getUpcomingTeacherSessions(long teacherId,
-                                                         Authentication authentication) {
-
-        return getTeacherSessions(teacherId, authentication)
-                .stream()
-                .filter(x -> x.getEventStatus().equals("UPCOMING"))
-                .toList();
-    }
 
     @Scheduled(fixedRate = 120000) // Every 2 minutes
     @Transactional

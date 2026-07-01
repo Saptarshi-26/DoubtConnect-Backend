@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.controller;
 
+import com.saptarshi.doubtconnect.dto.AuthResponse;
 import com.saptarshi.doubtconnect.dto.LoginRequest;
 import com.saptarshi.doubtconnect.dto.SignUpRequest;
 import com.saptarshi.doubtconnect.entity.User;
@@ -29,9 +30,13 @@ public class AuthController {
     public ResponseEntity<?> login(
             @RequestBody LoginRequest loginRequest){
 
-        return new ResponseEntity<>(
-                authService.login(loginRequest),
-                HttpStatus.OK);
+        AuthResponse response = authService.login(loginRequest);
+
+        if (response == null) {
+            return new ResponseEntity<>("Invalid username or password", HttpStatus.UNAUTHORIZED);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }

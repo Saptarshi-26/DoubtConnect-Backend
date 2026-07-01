@@ -1,4 +1,4 @@
-package com.saptarshi.doubtconnect.controller;
+package com.saptarshi.doubtconnect.controller.student;
 
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;

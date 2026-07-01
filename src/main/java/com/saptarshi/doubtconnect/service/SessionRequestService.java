@@ -2,6 +2,7 @@ package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.SessionActionDTO;
 import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
+import com.saptarshi.doubtconnect.dto.SessionRequestResponseDto;
 import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.repository.*;
@@ -80,29 +81,111 @@ public class SessionRequestService {
         return false;
     }
 
-    public List<SessionRequest> findByStudentProfile(Long id ,Authentication authentication){
+    public List<SessionRequestResponseDto> findByStudentProfile(Long id,Authentication authentication) {
 
-        Optional<StudentProfile> studentProfile = studentProfileRepository.findById(id);
-        if(studentProfile.isPresent()) {
+        Optional<StudentProfile> studentProfile =
+                studentProfileRepository.findById(id);
 
-            if(!ownership(authentication,studentProfile.get().getUser().getUsername()))
+        if (studentProfile.isPresent()) {
+
+            if (!ownership(authentication,
+                    studentProfile.get().getUser().getUsername())) {
                 return new ArrayList<>();
+            }
 
-            return sessionRequestRepository.findByStudentProfile(studentProfile.get());
+            return sessionRequestRepository
+                    .findByStudentProfile(studentProfile.get())
+                    .stream()
+                    .map(request -> {
+
+                        SessionRequestResponseDto dto = new SessionRequestResponseDto();
+
+                        dto.setId(request.getId());
+                        dto.setSubject(request.getSubject());
+                        dto.setDescription(request.getDescription());
+                        dto.setStatus(request.getStatus());
+                        dto.setSessionDuration(request.getSessionDuration());
+                        dto.setTotalAmount(request.getTotalAmount());
+
+                        dto.setStudentId(
+                                request.getStudentProfile().getId());
+
+                        dto.setStudentName(
+                                request.getStudentProfile().getUser().getUsername());
+
+                        dto.setStudentProfilePictureUrl(
+                                request.getStudentProfile().getProfilePictureUrl());
+
+                        dto.setTeacherId(
+                                request.getTeacherProfile().getId());
+
+                        dto.setTeacherName(
+                                request.getTeacherProfile().getUser().getUsername());
+
+                        dto.setTeacherProfilePictureUrl(
+                                request.getTeacherProfile().getProfilePictureUrl());
+
+                        return dto;
+
+                    }).toList();
         }
+
         return new ArrayList<>();
     }
 
-    public List<SessionRequest> findByTeacherProfile(Long id,Authentication authentication){
-        Optional<TeacherProfile> teacherProfile = teacherProfileRepository.findById(id);
-        if(teacherProfile.isPresent()) {
 
-            if(!ownership(authentication,teacherProfile.get().getUser().getUsername()))
+    public List<SessionRequestResponseDto> findByTeacherProfile(
+            Long id,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacherProfile =
+                teacherProfileRepository.findById(id);
+
+        if (teacherProfile.isPresent()) {
+
+            if (!ownership(authentication,
+                    teacherProfile.get().getUser().getUsername())) {
                 return new ArrayList<>();
+            }
 
-            return sessionRequestRepository.findByTeacherProfile(teacherProfile.get());
+            return sessionRequestRepository
+                    .findByTeacherProfile(teacherProfile.get())
+                    .stream()
+                    .map(request -> {
+
+                        SessionRequestResponseDto dto = new SessionRequestResponseDto();
+
+                        dto.setId(request.getId());
+                        dto.setSubject(request.getSubject());
+                        dto.setDescription(request.getDescription());
+                        dto.setStatus(request.getStatus());
+                        dto.setSessionDuration(request.getSessionDuration());
+                        dto.setTotalAmount(request.getTotalAmount());
+
+                        dto.setStudentId(
+                                request.getStudentProfile().getId());
+
+                        dto.setStudentName(
+                                request.getStudentProfile().getUser().getUsername());
+
+                        dto.setStudentProfilePictureUrl(
+                                request.getStudentProfile().getProfilePictureUrl());
+
+                        dto.setTeacherId(
+                                request.getTeacherProfile().getId());
+
+                        dto.setTeacherName(
+                                request.getTeacherProfile().getUser().getUsername());
+
+                        dto.setTeacherProfilePictureUrl(
+                                request.getTeacherProfile().getProfilePictureUrl());
+
+                        return dto;
+
+                    }).toList();
         }
-        else return new ArrayList<>();
+
+        return new ArrayList<>();
     }
 
     public String acceptRequest(SessionActionDTO sessionActionDTO,Authentication authentication){
@@ -213,6 +296,9 @@ public class SessionRequestService {
         }
         return "NOT FOUND";
     }
+
+
+
     public Boolean updateSession(Long id, UpdateSessionDTO dto,Authentication authentication){
         Optional<SessionRequest> oldRequest = sessionRequestRepository.findById(id);
         if(oldRequest.isPresent()){

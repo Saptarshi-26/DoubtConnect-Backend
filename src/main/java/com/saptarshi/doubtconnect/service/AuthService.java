@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.service;
 
+import com.saptarshi.doubtconnect.dto.AuthResponse;
 import com.saptarshi.doubtconnect.dto.LoginRequest;
 import com.saptarshi.doubtconnect.dto.SignUpRequest;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
@@ -34,28 +35,39 @@ public class AuthService {
     @Autowired
     private TeacherProfileRepository teacherProfileRepository;
 
-    public String login(LoginRequest loginRequest){
-        Optional<User> user =
+    public AuthResponse login(LoginRequest loginRequest){
+        Optional<User> userOpt =
                 userRepository.findByUsername(
                         loginRequest.getUsername());
 
-        if(user.isEmpty()){
-            return "USER NOT FOUND";
+        if(userOpt.isEmpty()){
+            return null;
         }
+
+        User user = userOpt.get();
 
         if(!passwordEncoder.matches(
                 loginRequest.getPassword(),
-                user.get().getPassword())){
+                user.getPassword())){
 
-            return "INVALID PASSWORD";
+            return null;
         }
 
+        String token = jwtUtil.generateToken(user.getUsername());
+        Long profileId = null;
 
+        if(user.getRole().equals("STUDENT")){
+            profileId = studentProfileRepository.findByUser(user)
+                    .map(StudentProfile::getId)
+                    .orElse(null);
+        } else if(user.getRole().equals("TEACHER")){
+            profileId = teacherProfileRepository.findByUser(user)
+                    .map(TeacherProfile::getId)
+                    .orElse(null);
+        }
 
-        return jwtUtil.generateToken(
-                user.get().getUsername());
+        return new AuthResponse(token, user.getRole(), user.getUsername(), profileId);
     }
-
     @Transactional
     public String signUp(SignUpRequest sign){
 

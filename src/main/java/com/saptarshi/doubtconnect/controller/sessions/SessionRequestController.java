@@ -1,9 +1,9 @@
-package com.saptarshi.doubtconnect.controller;
+package com.saptarshi.doubtconnect.controller.sessions;
 
 import com.saptarshi.doubtconnect.dto.SessionActionDTO;
 import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
+import com.saptarshi.doubtconnect.dto.SessionRequestResponseDto;
 import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
-import com.saptarshi.doubtconnect.entity.SessionRequest;
 import com.saptarshi.doubtconnect.service.SessionRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,19 +29,19 @@ public class SessionRequestController {
     }
 
     @GetMapping("/student/{id}")
-    public ResponseEntity<List<SessionRequest>> sessionOfStudent(@PathVariable Long id,Authentication authentication){
+    public ResponseEntity<List<SessionRequestResponseDto>> sessionOfStudent(@PathVariable Long id,Authentication authentication){
 
-        List<SessionRequest> listSessionRequest = service.findByStudentProfile(id,authentication);
+        List<SessionRequestResponseDto> listSessionRequest = service.findByStudentProfile(id,authentication);
         return listSessionRequest.isEmpty()?new ResponseEntity<>(listSessionRequest,HttpStatus.NOT_FOUND):
                 new ResponseEntity<>(listSessionRequest,HttpStatus.OK);
     }
 
     @GetMapping("/teacher/{id}")
-    public ResponseEntity<List<SessionRequest>> sessionOfTeacher(@PathVariable Long id,
+    public ResponseEntity<List<SessionRequestResponseDto>> sessionOfTeacher(@PathVariable Long id,
                                                                  Authentication authentication
                                                                  ){
 
-        List<SessionRequest> listSessionRequest = service.findByTeacherProfile(id,authentication);
+        List<SessionRequestResponseDto> listSessionRequest = service.findByTeacherProfile(id,authentication);
         return listSessionRequest.isEmpty()?new ResponseEntity<>(listSessionRequest,HttpStatus.NOT_FOUND):
                 new ResponseEntity<>(listSessionRequest,HttpStatus.OK);
     }

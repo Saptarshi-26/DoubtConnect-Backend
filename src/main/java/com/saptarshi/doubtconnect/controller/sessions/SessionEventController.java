@@ -1,6 +1,5 @@
-package com.saptarshi.doubtconnect.controller;
+package com.saptarshi.doubtconnect.controller.sessions;
 
-import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.service.SessionEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/session-event")
 public class SessionEventController {
@@ -20,7 +17,7 @@ public class SessionEventController {
     private SessionEventService service;
 
     @GetMapping("/student/{id}")
-    public ResponseEntity<List<SessionEvent>> getStudentSessions(
+    public ResponseEntity<?> getStudentSessions(
             @PathVariable long id,
             Authentication authentication) {
 
@@ -29,7 +26,7 @@ public class SessionEventController {
     }
 
     @GetMapping("/teacher/{id}")
-    public ResponseEntity<List<SessionEvent>> getTeacherSessions(
+    public ResponseEntity<?> getTeacherSessions(
             @PathVariable long id,
             Authentication authentication) {
 
@@ -38,7 +35,7 @@ public class SessionEventController {
     }
 
     @GetMapping("/student/upcoming/{id}")
-    public ResponseEntity<List<SessionEvent>> getUpcomingStudentSessions(
+    public ResponseEntity<?> getUpcomingStudentSessions(
             @PathVariable long id,
             Authentication authentication) {
 
@@ -47,7 +44,7 @@ public class SessionEventController {
     }
 
     @GetMapping("/teacher/upcoming/{id}")
-    public ResponseEntity<List<SessionEvent>> getUpcomingTeacherSessions(
+    public ResponseEntity<?> getUpcomingTeacherSessions(
             @PathVariable long id,
             Authentication authentication) {
 
