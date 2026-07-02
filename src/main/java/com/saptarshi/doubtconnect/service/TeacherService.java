@@ -3,13 +3,9 @@ package com.saptarshi.doubtconnect.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.*;
-import com.saptarshi.doubtconnect.entity.StudentProfile;
-import com.saptarshi.doubtconnect.entity.TeacherProfile;
-import com.saptarshi.doubtconnect.entity.User;
-import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
-import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
-import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
-import com.saptarshi.doubtconnect.repository.UserRepository;
+import com.saptarshi.doubtconnect.entity.*;
+import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
+import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -36,6 +32,15 @@ public class TeacherService {
 
     @Autowired
     private StudentProfileRepository studentProfileRepository;
+
+    @Autowired
+    private TeacherAvailabilityRepository teacherAvailabilityRepository;
+
+    @Autowired
+    private GoogleCredentialRepository googleCredentialRepository;
+
+    @Autowired
+    private SessionEventRepository sessionEventRepository;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -125,7 +130,21 @@ public class TeacherService {
     }
 
 
-
+   public List<TeacherDto> findAllInternal(){
+        return teacherProfileRepository.findAll().stream().map(teacher->{
+            TeacherDto dto = new TeacherDto();
+            dto.setId(teacher.getId());
+            dto.setName(teacher.getUser().getUsername());
+            dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
+            dto.setSubjects(teacher.getSubjects());
+            dto.setLanguage(teacher.getLanguage());
+            dto.setBio(teacher.getBio());
+            dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
+            dto.setRating(teacher.getRating());
+            dto.setNumberOfRatings(teacher.getNumberOfRatings());
+            return dto;
+        }).toList();
+   }
 
     public List<TeacherDto> findAll() {
 
@@ -251,6 +270,91 @@ public class TeacherService {
         teacher.get().getSubjects().remove(dto.getSubject());
 
         teacherProfileRepository.save(teacher.get());
+
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteTeacher(Long teacherId, Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherId);
+
+        if (teacher.isEmpty()) {
+            return false;
+        }
+
+        if (!isOwner(
+                teacher.get(),
+                authentication.getName())) {
+            return false;
+        }
+
+        // Cancel pending requests
+
+        List<SessionRequest> pendingRequests =
+                sessionRequestRepository
+                        .findByTeacherProfileAndStatus(
+                                teacher.get(),
+                                "PENDING");
+
+        for (SessionRequest request : pendingRequests) {
+            request.setStatus("CANCELLED");
+        }
+
+        sessionRequestRepository.saveAll(pendingRequests);
+
+        // Cancel upcoming sessions
+
+        List<SessionEvent> upcomingSessions =
+                sessionEventRepository
+                        .findByTeacherProfileAndEventStatus(
+                                teacher.get(),
+                                "UPCOMING");
+
+        for (SessionEvent event : upcomingSessions) {
+
+            event.setEventStatus("CANCELLED");
+
+            event.getSessionRequest()
+                    .setStatus("CANCELLED");
+
+            List<TeacherAvailability> slots =
+                    teacherAvailabilityRepository
+                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(
+                                    teacher.get());
+
+            for (TeacherAvailability slot : slots) {
+
+                if (!slot.getStartTime().isBefore(event.getStartTime())
+                        && !slot.getEndTime().isAfter(event.getEndTime())) {
+
+                    slot.setBooked(false);
+                    slot.setAvailable(true);
+                }
+            }
+
+            teacherAvailabilityRepository.saveAll(slots);
+
+            sessionRequestRepository.save(
+                    event.getSessionRequest());
+        }
+
+        sessionEventRepository.saveAll(upcomingSessions);
+
+        teacherAvailabilityRepository.deleteAll(
+                teacherAvailabilityRepository
+                        .findByTeacherProfile(teacher.get()));
+
+        googleCredentialRepository
+                .findByTeacherProfile(teacher.get())
+                .ifPresent(googleCredentialRepository::delete);
+
+        User user = teacher.get().getUser();
+
+        teacherProfileRepository.delete(teacher.get());
+
+        userRepository.delete(user);
 
         return true;
     }

@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface TeacherProfileRepository extends JpaRepository<TeacherProfile,Long> {
     public Optional<TeacherProfile> findByUser(User user);
+
+    Optional<TeacherProfile> findByUserUsername(String username);
 }

@@ -24,6 +24,25 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteStudent(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        boolean deleted =
+                studentService.deleteStudent(
+                        id,
+                        authentication);
+
+        return deleted
+                ? new ResponseEntity<>(
+                "Student deleted successfully",
+                HttpStatus.OK)
+                : new ResponseEntity<>(
+                "Student not found or unauthorized",
+                HttpStatus.BAD_REQUEST);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<?> getAll(){
         return new ResponseEntity<>(studentService.getAll(),HttpStatus.OK);

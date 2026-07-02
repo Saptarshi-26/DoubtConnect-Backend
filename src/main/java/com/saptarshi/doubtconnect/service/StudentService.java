@@ -4,12 +4,8 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
-import com.saptarshi.doubtconnect.entity.StudentProfile;
-import com.saptarshi.doubtconnect.entity.TeacherProfile;
-import com.saptarshi.doubtconnect.entity.User;
-import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
-import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
-import com.saptarshi.doubtconnect.repository.UserRepository;
+import com.saptarshi.doubtconnect.entity.*;
+import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -36,6 +32,15 @@ public class StudentService {
 
     @Autowired
     private Cloudinary cloudinary;
+
+    @Autowired
+    private SessionRequestRepository sessionRequestRepository;
+
+    @Autowired
+    private SessionEventRepository sessionEventRepository;
+
+    @Autowired
+    private TeacherAvailabilityRepository teacherAvailabilityRepository;
 
 
     public List<StudentDto> getAll() {
@@ -169,10 +174,7 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentProfile uploadProfilePicture(
-            Long studentProfileId,
-            MultipartFile file,
-            Authentication authentication) throws IOException {
+    public StudentProfile uploadProfilePicture(Long studentProfileId, MultipartFile file, Authentication authentication) throws IOException {
 
         Optional<StudentProfile> student =
                 studentProfileRepository.findById(studentProfileId);
@@ -199,5 +201,82 @@ public class StudentService {
         student.get().setProfilePictureUrl(imageUrl);
 
         return studentProfileRepository.save(student.get());
+    }
+
+    @Transactional
+    public boolean deleteStudent(Long studentId, Authentication authentication) {
+
+        Optional<StudentProfile> student =
+                studentProfileRepository.findById(studentId);
+
+        if (student.isEmpty()) {
+            return false;
+        }
+
+        if (!isOwner(
+                student.get(),
+                authentication.getName())) {
+            return false;
+        }
+
+        // Cancel pending requests
+
+        List<SessionRequest> pendingRequests =
+                sessionRequestRepository
+                        .findByStudentProfileAndStatus(
+                                student.get(),
+                                "PENDING");
+
+        for (SessionRequest request : pendingRequests) {
+            request.setStatus("CANCELLED");
+        }
+
+        sessionRequestRepository.saveAll(pendingRequests);
+
+        // Cancel upcoming sessions
+
+        List<SessionEvent> upcomingSessions =
+                sessionEventRepository
+                        .findByStudentProfileAndEventStatus(
+                                student.get(),
+                                "UPCOMING");
+
+        for (SessionEvent event : upcomingSessions) {
+
+            event.setEventStatus("CANCELLED");
+
+            event.getSessionRequest()
+                    .setStatus("CANCELLED");
+
+            List<TeacherAvailability> slots =
+                    teacherAvailabilityRepository
+                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(
+                                    event.getTeacherProfile());
+
+            for (TeacherAvailability slot : slots) {
+
+                if (!slot.getStartTime().isBefore(event.getStartTime())
+                        && !slot.getEndTime().isAfter(event.getEndTime())) {
+
+                    slot.setBooked(false);
+                    slot.setAvailable(true);
+                }
+            }
+
+            teacherAvailabilityRepository.saveAll(slots);
+
+            sessionRequestRepository.save(
+                    event.getSessionRequest());
+        }
+
+        sessionEventRepository.saveAll(upcomingSessions);
+
+        User user = student.get().getUser();
+
+        studentProfileRepository.delete(student.get());
+
+        userRepository.delete(user);
+
+        return true;
     }
 }

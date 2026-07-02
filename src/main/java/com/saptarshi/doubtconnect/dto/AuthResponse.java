@@ -1,7 +1,11 @@
 package com.saptarshi.doubtconnect.dto;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Data
 public class AuthResponse {
     private String token;
@@ -18,15 +22,4 @@ public class AuthResponse {
         this.profileId = profileId;
     }
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
-
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public Long getProfileId() { return profileId; }
-    public void setProfileId(Long profileId) { this.profileId = profileId; }
 }

@@ -1,5 +1,6 @@
 package com.saptarshi.doubtconnect.service;
 
+import com.saptarshi.doubtconnect.dto.AuthMessageResponse;
 import com.saptarshi.doubtconnect.dto.AuthResponse;
 import com.saptarshi.doubtconnect.dto.LoginRequest;
 import com.saptarshi.doubtconnect.dto.SignUpRequest;
@@ -69,10 +70,10 @@ public class AuthService {
         return new AuthResponse(token, user.getRole(), user.getUsername(), profileId);
     }
     @Transactional
-    public String signUp(SignUpRequest sign){
+    public AuthMessageResponse signUp(SignUpRequest sign){
 
         if(userRepository.findByUsername(sign.getUsername()).isPresent()){
-            return "Username already exists";
+            return new AuthMessageResponse("Username already exists");
         }
 
         User user = new User();
@@ -105,10 +106,10 @@ public class AuthService {
             teacherProfileRepository.save(teacherProfile);
 
         } else if (user.getRole().equals("ADMIN")) {
-            return "ADMIN CREATION NOT ALLOWED";
+            return new AuthMessageResponse("ADMIN CREATION NOT ALLOWED");
         }
 
-        return "Successfully registered ";
+        return new AuthMessageResponse("Successfully registered");
 
     }
 }

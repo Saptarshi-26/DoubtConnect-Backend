@@ -49,7 +49,11 @@ public class SessionRequestService {
 
     @Transactional
     public boolean sendRequest(SessionRequestDTO dto, Authentication authentication){
-
+//        System.out.println("Student ID = " + dto.getStudentProfileId());
+//        System.out.println("Teacher ID = " + dto.getTeacherProfileId());
+        if (dto.getStudentProfileId() == null || dto.getTeacherProfileId() == null) {
+            return false;
+        }
         Optional<StudentProfile> student =
                 studentProfileRepository.findById(dto.getStudentProfileId());
 

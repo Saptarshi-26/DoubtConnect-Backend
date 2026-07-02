@@ -31,6 +31,8 @@ public class SecurityConfig {
 
                 .csrf(AbstractHttpConfigurer::disable)
 
+                .cors(cors -> {})
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
@@ -59,8 +61,7 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/teacher/getAll",
-                                "/teacher/*"
+                                "/teacher/getAll"
                         ).permitAll()
 
 
@@ -70,6 +71,10 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // -------------------- TEACHER --------------------
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/teacher/getAllInternal"
+                        ).hasRole("ADMIN")
 
                         .requestMatchers("/teacher/**")
                         .hasAnyRole("ADMIN", "TEACHER")
@@ -148,6 +153,26 @@ public class SecurityConfig {
                                 "/feedback/rate/**",
                                 "/feedback/review/**"
                         )
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        // -------------------- PAYOUT --------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/payout"
+                        ).hasRole("TEACHER")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/payout"
+                        ).hasRole("TEACHER")
+
+                        //------------------- DELETE TEACHER STUDENT --------------------
+
+                        .requestMatchers("/teacher/**")
+                        .hasAnyRole("ADMIN", "TEACHER")
+
+                        .requestMatchers("/student/**")
                         .hasAnyRole("ADMIN", "STUDENT")
 
                         // -------------------- EVERYTHING ELSE --------------------

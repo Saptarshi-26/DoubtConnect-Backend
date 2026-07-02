@@ -22,9 +22,35 @@ public class TeacherController {
     @Autowired
     private TeacherService teacherService;
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTeacher(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        boolean deleted =
+                teacherService.deleteTeacher(
+                        id,
+                        authentication);
+
+        return deleted
+                ? new ResponseEntity<>(
+                "Teacher deleted successfully",
+                HttpStatus.OK)
+                : new ResponseEntity<>(
+                "Teacher not found or unauthorized",
+                HttpStatus.BAD_REQUEST);
+    }
+
     @GetMapping("/getAll")
     public ResponseEntity<?> findAll(){
         List<TeacherDto> profileList = teacherService.findAll();
+        return profileList.isEmpty()?new ResponseEntity<>("No teacher found",HttpStatus.OK):
+                new ResponseEntity<>(profileList,HttpStatus.OK);
+    }
+
+    @GetMapping("/getAllInternal")
+    public ResponseEntity<?> findAllInternal(){
+        List<TeacherDto> profileList = teacherService.findAllInternal();
         return profileList.isEmpty()?new ResponseEntity<>("No teacher found",HttpStatus.OK):
                 new ResponseEntity<>(profileList,HttpStatus.OK);
     }

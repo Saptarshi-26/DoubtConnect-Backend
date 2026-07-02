@@ -22,4 +22,7 @@ public interface SessionEventRepository extends JpaRepository<SessionEvent,Long>
             LocalDateTime startTime,
             LocalDateTime endTime
     );
+    List<SessionEvent> findByStudentProfileAndEventStatus(
+            StudentProfile studentProfile,
+            String eventStatus);
 }

@@ -11,4 +11,11 @@ import java.util.List;
 public interface SessionRequestRepository extends JpaRepository<SessionRequest, Long> {
  public List<SessionRequest> findByStudentProfile(StudentProfile studentProfile);
  public List<SessionRequest> findByTeacherProfile(TeacherProfile teacherProfile);
+ List<SessionRequest> findByTeacherProfileAndStatus(
+         TeacherProfile teacherProfile,
+         String status);
+
+ List<SessionRequest> findByStudentProfileAndStatus(
+         StudentProfile studentProfile,
+         String status);
 }

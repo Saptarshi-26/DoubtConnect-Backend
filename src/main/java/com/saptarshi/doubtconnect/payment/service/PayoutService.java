@@ -191,8 +191,11 @@ public class PayoutService {
 //        }
 //    }
     @Transactional
-    public String savePayoutDetails(long id, PayOutDetailsDto detailsDto, String username) {
-        Optional<TeacherProfile> profile = teacherProfileRepository.findById(id);
+    public String savePayoutDetails(
+            PayOutDetailsDto detailsDto,
+            String username) {
+        Optional<TeacherProfile> profile =
+                teacherProfileRepository.findByUserUsername(username);
         if (profile.isPresent() && isOwner(profile.get(), username)) {
             if (profile.get().getPayoutDetails() == null || profile.get().getPayoutDetails().getAccountStatus().equals("INACTIVE")) {
                 PayoutDetails payoutDetails = profile.get().getPayoutDetails();
@@ -219,6 +222,7 @@ public class PayoutService {
                 }
                 payoutDetails.setAccountStatus("ACTIVE");
                 profile.get().setPayoutDetails(payoutDetails);
+                teacherProfileRepository.save(profile.get());
 
 //                    String contactId = createContact(profile.get());
 //
@@ -245,8 +249,13 @@ public class PayoutService {
     }
 
     @Transactional
-    public String updatePaymentDetails(long id , PayOutDetailsDto detailsDto , String username){
-        Optional<TeacherProfile> profile = teacherProfileRepository.findById(id);
+    public String updatePaymentDetails(
+            PayOutDetailsDto detailsDto,
+            String username){
+        Optional<TeacherProfile> profile =
+                teacherProfileRepository.findByUserUsername(username);
+
+
         if(profile.isPresent() && isOwner(profile.get(),username)){
             if(profile.get().getPayoutDetails()!=null){
                 PayoutDetails payoutDetails = profile.get().getPayoutDetails();
