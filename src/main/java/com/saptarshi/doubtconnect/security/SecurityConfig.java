@@ -167,14 +167,6 @@ public class SecurityConfig {
                                 "/payout"
                         ).hasRole("TEACHER")
 
-                        //------------------- DELETE TEACHER STUDENT --------------------
-
-                        .requestMatchers("/teacher/**")
-                        .hasAnyRole("ADMIN", "TEACHER")
-
-                        .requestMatchers("/student/**")
-                        .hasAnyRole("ADMIN", "STUDENT")
-
                         // -------------------- EVERYTHING ELSE --------------------
 
                         .anyRequest()
