@@ -350,7 +350,7 @@ public class TeacherService {
 
         teacherAvailabilityRepository.deleteAll(
                 teacherAvailabilityRepository
-                        .findByTeacherProfile(
+                        .findByTeacherProfileOrderByStartTimeAsc(
                                 teacher.get()));
 
         // Delete Google credentials

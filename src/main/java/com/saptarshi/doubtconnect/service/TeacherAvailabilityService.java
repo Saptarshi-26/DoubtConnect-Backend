@@ -161,7 +161,7 @@ public class TeacherAvailabilityService {
         }
 
         List<TeacherAvailability> allSlots =
-                teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
+                teacherAvailabilityRepository.findByTeacherProfileOrderByStartTimeAsc(teacher.get());
 
         // Reset every non-booked slot
         for (TeacherAvailability slot : allSlots) {
@@ -301,7 +301,7 @@ public class TeacherAvailabilityService {
         }
 
         return teacherAvailabilityRepository
-                .findByTeacherProfile(teacher.get())
+                .findByTeacherProfileOrderByStartTimeAsc(teacher.get())
                 .stream()
                 .map(slot -> {
 

@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public interface TeacherAvailabilityRepository extends JpaRepository<TeacherAvailability,Long> {
-    List<TeacherAvailability> findByTeacherProfile(TeacherProfile teacherProfile);
+    List<TeacherAvailability> findByTeacherProfileOrderByStartTimeAsc(
+            TeacherProfile teacherProfile);
     Optional<TeacherAvailability> findByTeacherProfileAndStartTimeAndEndTime(
             TeacherProfile teacherProfile,
             LocalDateTime startTime,
