@@ -26,6 +26,10 @@ public class Review {
     @JoinColumn(name = "teacherProfile_id",nullable = false)
     private TeacherProfile teacherProfile;
 
+    @ManyToOne
+    @JoinColumn(name = "studentProfile_id", nullable = false)
+    private StudentProfile studentProfile;
+
     @Column(nullable = false)
     private LocalDate localDate;
 

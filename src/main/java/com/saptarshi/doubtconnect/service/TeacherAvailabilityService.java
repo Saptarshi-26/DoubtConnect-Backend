@@ -1,6 +1,7 @@
 package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.AvailabilityDto;
+import com.saptarshi.doubtconnect.dto.AvailabilityResponseDto;
 import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.entity.TeacherAvailability;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
@@ -141,7 +142,7 @@ public class TeacherAvailabilityService {
 
 
     @Transactional
-    public List<TeacherAvailability> makeSlotsAvailable(
+    public List<AvailabilityResponseDto> makeSlotsAvailable(
             Long teacherProfileId,
             List<Long> slotIds,
             Authentication authentication) {
@@ -181,11 +182,26 @@ public class TeacherAvailabilityService {
             }
         }
 
-        return teacherAvailabilityRepository.saveAll(allSlots);
+        return teacherAvailabilityRepository.saveAll(allSlots)
+                .stream()
+                .map(slot -> {
+
+                    AvailabilityResponseDto dto =
+                            new AvailabilityResponseDto();
+
+                    dto.setId(slot.getId());
+                    dto.setStartTime(slot.getStartTime());
+                    dto.setEndTime(slot.getEndTime());
+                    dto.setAvailable(slot.isAvailable());
+                    dto.setBooked(slot.isBooked());
+
+                    return dto;
+
+                }).toList();
     }
 
 
-    public List<TeacherAvailability> getAvailableSlots(
+    public List<AvailabilityResponseDto> getAvailableSlots(
             Long teacherProfileId) {
 
         Optional<TeacherProfile> teacher =
@@ -197,7 +213,22 @@ public class TeacherAvailabilityService {
 
         return teacherAvailabilityRepository
                 .findByTeacherProfileAndAvailableTrueAndBookedFalse(
-                        teacher.get());
+                        teacher.get())
+                .stream()
+                .map(slot -> {
+
+                    AvailabilityResponseDto dto =
+                            new AvailabilityResponseDto();
+
+                    dto.setId(slot.getId());
+                    dto.setStartTime(slot.getStartTime());
+                    dto.setEndTime(slot.getEndTime());
+                    dto.setAvailable(slot.isAvailable());
+                    dto.setBooked(slot.isBooked());
+
+                    return dto;
+
+                }).toList();
     }
 
 
@@ -252,7 +283,7 @@ public class TeacherAvailabilityService {
         return true;
     }
 
-    public List<TeacherAvailability> getTeacherAvailability(
+    public List<AvailabilityResponseDto> getTeacherAvailability(
             Long teacherProfileId,
             Authentication authentication) {
 
@@ -267,8 +298,23 @@ public class TeacherAvailabilityService {
             return new ArrayList<>();
         }
 
-        return teacherAvailabilityRepository.findByTeacherProfile(teacher.get());
-    }
+        return teacherAvailabilityRepository
+                .findByTeacherProfile(teacher.get())
+                .stream()
+                .map(slot -> {
 
+                    AvailabilityResponseDto dto =
+                            new AvailabilityResponseDto();
+
+                    dto.setId(slot.getId());
+                    dto.setStartTime(slot.getStartTime());
+                    dto.setEndTime(slot.getEndTime());
+                    dto.setAvailable(slot.isAvailable());
+                    dto.setBooked(slot.isBooked());
+
+                    return dto;
+
+                }).toList();
+    }
    }
 

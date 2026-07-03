@@ -47,6 +47,83 @@ public class SessionEventService {
                 (user.isPresent() && user.get().getRole().equals("ADMIN"));
     }
 
+    public Optional<SessionEventResponseDto> getSessionEventById(
+            Long id,
+            Authentication authentication) {
+
+        Optional<SessionEvent> event =
+                sessionEventRepository.findById(id);
+
+        if (event.isEmpty()) {
+            return Optional.empty();
+        }
+
+        SessionEvent sessionEvent = event.get();
+
+        boolean studentOwner =
+                ownerShip(
+
+                        sessionEvent.getStudentProfile()
+                                .getUser()
+                                .getUsername(),authentication);
+
+        boolean teacherOwner =
+                ownerShip(
+
+                        sessionEvent.getTeacherProfile()
+                                .getUser()
+                                .getUsername(),authentication);
+
+        if (!studentOwner && !teacherOwner) {
+            return Optional.empty();
+        }
+
+        SessionEventResponseDto dto =
+                new SessionEventResponseDto();
+
+        dto.setId(sessionEvent.getId());
+
+        dto.setSessionRequestId(
+                sessionEvent.getSessionRequest().getId());
+
+        dto.setStudentId(
+                sessionEvent.getStudentProfile().getId());
+
+        dto.setStudentName(
+                sessionEvent.getStudentProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setStudentProfilePictureUrl(
+                sessionEvent.getStudentProfile()
+                        .getProfilePictureUrl());
+
+        dto.setTeacherId(
+                sessionEvent.getTeacherProfile().getId());
+
+        dto.setTeacherName(
+                sessionEvent.getTeacherProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setTeacherProfilePictureUrl(
+                sessionEvent.getTeacherProfile()
+                        .getProfilePictureUrl());
+
+        dto.setStartTime(sessionEvent.getStartTime());
+        dto.setEndTime(sessionEvent.getEndTime());
+        dto.setMeetLink(sessionEvent.getMeetLink());
+        dto.setPaymentAvailable(
+                sessionEvent.isPaymentAvailable());
+
+        dto.setEventStatus(
+                sessionEvent.getEventStatus());
+
+        dto.setRated(sessionEvent.isRated());
+
+        return Optional.of(dto);
+    }
+
     public List<SessionEventResponseDto> getStudentSessions(
             long studentId,
             Authentication authentication) {

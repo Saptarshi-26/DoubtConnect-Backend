@@ -46,6 +46,73 @@ public class SessionRequestService {
 
     }
 
+    public Optional<SessionRequestResponseDto> getSessionRequestById(
+            Long id,
+            Authentication authentication) {
+
+        Optional<SessionRequest> request =
+                sessionRequestRepository.findById(id);
+
+        if (request.isEmpty()) {
+            return Optional.empty();
+        }
+
+        SessionRequest sessionRequest = request.get();
+
+        boolean studentOwner =
+                ownership(
+                        authentication,
+                        sessionRequest.getStudentProfile()
+                                .getUser()
+                                .getUsername());
+
+        boolean teacherOwner =
+                ownership(
+                        authentication,
+                        sessionRequest.getTeacherProfile()
+                                .getUser()
+                                .getUsername());
+
+        if (!studentOwner && !teacherOwner) {
+            return Optional.empty();
+        }
+
+        SessionRequestResponseDto dto =
+                new SessionRequestResponseDto();
+
+        dto.setId(sessionRequest.getId());
+        dto.setSubject(sessionRequest.getSubject());
+        dto.setDescription(sessionRequest.getDescription());
+        dto.setStatus(sessionRequest.getStatus());
+        dto.setSessionDuration(sessionRequest.getSessionDuration());
+        dto.setTotalAmount(sessionRequest.getTotalAmount());
+
+        dto.setStudentId(
+                sessionRequest.getStudentProfile().getId());
+
+        dto.setStudentName(
+                sessionRequest.getStudentProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setStudentProfilePictureUrl(
+                sessionRequest.getStudentProfile()
+                        .getProfilePictureUrl());
+
+        dto.setTeacherId(
+                sessionRequest.getTeacherProfile().getId());
+
+        dto.setTeacherName(
+                sessionRequest.getTeacherProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setTeacherProfilePictureUrl(
+                sessionRequest.getTeacherProfile()
+                        .getProfilePictureUrl());
+
+        return Optional.of(dto);
+    }
 
     @Transactional
     public boolean sendRequest(SessionRequestDTO dto, Authentication authentication){

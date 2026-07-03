@@ -34,17 +34,58 @@ public class TeacherFeedbackService {
         return userName.equals(authentication.getName());
     }
 
-    public List<ReviewResponseDto> getAll(long teacherProfileId){
-        Optional<TeacherProfile> profile = teacherProfileRepository.findById(teacherProfileId);
-        return profile.map(teacherProfile -> reviewRepository.findByTeacherProfile(teacherProfile).stream().map(x -> {
-            ReviewResponseDto reviewResponseDto = new ReviewResponseDto();
-            reviewResponseDto.setReviewDate(x.getLocalDate());
-            reviewResponseDto.setStudentName(x.getSessionEvent().getStudentProfile().
-                    getUser().getUsername());
-            reviewResponseDto.setReview(x.getReview());
-            return reviewResponseDto;
+    public List<ReviewDto> getTeacherReviews(Long teacherId) {
 
-        }).toList()).orElseGet(ArrayList::new);
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherId);
+
+        if (teacher.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return reviewRepository.findByTeacherProfile(teacher.get())
+                .stream()
+                .map(review -> {
+
+                    ReviewDto dto = new ReviewDto();
+
+                    dto.setReview(review.getReview());
+                    dto.setSessionEventId(
+                            review.getSessionEvent().getId());
+
+                    return dto;
+
+                }).toList();
+    }
+
+    public List<ReviewDto> getStudentReviews(Long studentId, Authentication authentication) {
+
+        Optional<StudentProfile> student =
+                studentProfileRepository.findById(studentId);
+
+        if (student.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (!ownerShip(
+                student.get().getUser().getUsername(),
+                authentication)) {
+            return new ArrayList<>();
+        }
+
+        return reviewRepository.findByStudentProfile(student.get())
+                .stream()
+                .map(review -> {
+
+                    ReviewDto dto = new ReviewDto();
+
+                    dto.setReview(review.getReview());
+                    dto.setSessionEventId(
+                            review.getSessionEvent().getId());
+
+                    return dto;
+
+                }).toList();
     }
 
     @Transactional
@@ -62,6 +103,7 @@ public class TeacherFeedbackService {
             return "Review cannot be empty";
         }
         Review review = new Review();
+        review.setStudentProfile(event.get().getStudentProfile());
         review.setLocalDate(LocalDate.now());
         review.setSessionEvent(event.get());
         review.setReview(dto.getReview());

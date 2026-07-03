@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.*;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
+import com.saptarshi.doubtconnect.payment.repository.PaymentOutRepository;
 import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class TeacherService {
 
     @Autowired
     private Cloudinary cloudinary;
+
+    @Autowired
+    private PaymentOutRepository paymentOutRepository;
 
     private boolean isOwner(TeacherProfile teacher, String username) {
 
@@ -131,19 +135,36 @@ public class TeacherService {
 
 
    public List<TeacherDto> findAllInternal(){
-        return teacherProfileRepository.findAll().stream().map(teacher->{
-            TeacherDto dto = new TeacherDto();
-            dto.setId(teacher.getId());
-            dto.setName(teacher.getUser().getUsername());
-            dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
-            dto.setSubjects(teacher.getSubjects());
-            dto.setLanguage(teacher.getLanguage());
-            dto.setBio(teacher.getBio());
-            dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
-            dto.setRating(teacher.getRating());
-            dto.setNumberOfRatings(teacher.getNumberOfRatings());
-            return dto;
-        }).toList();
+//       System.out.println("ADMIN GET ALL INTERNAL");
+//       System.out.println(teacherProfileRepository.findAll().size());
+       return teacherProfileRepository.findAll()
+               .stream()
+               .map(teacher -> {
+
+                   TeacherDto dto = new TeacherDto();
+
+                   dto.setId(teacher.getId());
+                   dto.setName(teacher.getUser().getUsername());
+                   dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
+                   dto.setSubjects(teacher.getSubjects());
+                   dto.setLanguage(teacher.getLanguage());
+                   dto.setBio(teacher.getBio());
+                   dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
+                   dto.setRating(teacher.getRating());
+                   dto.setNumberOfRatings(teacher.getNumberOfRatings());
+
+                   if (teacher.getPayoutDetails() != null) {
+
+                       if (teacher.getPayoutDetails().getUpiDetails() != null) {
+                           dto.setPaymentMethod("UPI");
+                       } else if (teacher.getPayoutDetails().getBankDetails() != null) {
+                           dto.setPaymentMethod("BANK");
+                       }
+                   }
+
+                   return dto;
+
+               }).toList();
    }
 
     public List<TeacherDto> findAll() {
@@ -290,7 +311,7 @@ public class TeacherService {
             return false;
         }
 
-        // Cancel pending requests
+        // Cancel all pending session requests
 
         List<SessionRequest> pendingRequests =
                 sessionRequestRepository
@@ -304,7 +325,7 @@ public class TeacherService {
 
         sessionRequestRepository.saveAll(pendingRequests);
 
-        // Cancel upcoming sessions
+        // Cancel all upcoming session events
 
         List<SessionEvent> upcomingSessions =
                 sessionEventRepository
@@ -319,36 +340,32 @@ public class TeacherService {
             event.getSessionRequest()
                     .setStatus("CANCELLED");
 
-            List<TeacherAvailability> slots =
-                    teacherAvailabilityRepository
-                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(
-                                    teacher.get());
-
-            for (TeacherAvailability slot : slots) {
-
-                if (!slot.getStartTime().isBefore(event.getStartTime())
-                        && !slot.getEndTime().isAfter(event.getEndTime())) {
-
-                    slot.setBooked(false);
-                    slot.setAvailable(true);
-                }
-            }
-
-            teacherAvailabilityRepository.saveAll(slots);
-
             sessionRequestRepository.save(
                     event.getSessionRequest());
         }
 
         sessionEventRepository.saveAll(upcomingSessions);
 
+        // Delete all availability slots
+
         teacherAvailabilityRepository.deleteAll(
                 teacherAvailabilityRepository
-                        .findByTeacherProfile(teacher.get()));
+                        .findByTeacherProfile(
+                                teacher.get()));
+
+        // Delete Google credentials
 
         googleCredentialRepository
                 .findByTeacherProfile(teacher.get())
-                .ifPresent(googleCredentialRepository::delete);
+                .ifPresent(
+                        googleCredentialRepository::delete);
+
+        // Delete payout details (if present)
+
+        if (teacher.get().getPayoutDetails() != null) {
+            paymentOutRepository.delete(
+                    teacher.get().getPayoutDetails());
+        }
 
         User user = teacher.get().getUser();
 

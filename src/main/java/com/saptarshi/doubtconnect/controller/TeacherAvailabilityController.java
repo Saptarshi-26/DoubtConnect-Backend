@@ -1,6 +1,7 @@
 package com.saptarshi.doubtconnect.controller;
 
 import com.saptarshi.doubtconnect.dto.AvailabilityDto;
+import com.saptarshi.doubtconnect.dto.AvailabilityResponseDto;
 import com.saptarshi.doubtconnect.entity.TeacherAvailability;
 import com.saptarshi.doubtconnect.service.TeacherAvailabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ public class TeacherAvailabilityController {
     }
 
     @GetMapping("/{teacherId}")
-    public List<TeacherAvailability> getTeacherAvailability(
+    public List<AvailabilityResponseDto> getTeacherAvailability(
             @PathVariable Long teacherId,
             Authentication authentication) {
 
@@ -39,7 +40,7 @@ public class TeacherAvailabilityController {
     }
 
     @PutMapping("/available/{teacherId}")
-    public List<TeacherAvailability> makeAvailable(
+    public List<AvailabilityResponseDto> makeAvailable(
             @PathVariable Long teacherId,
             @RequestBody List<Long> slotIds,
             Authentication authentication) {
@@ -65,7 +66,7 @@ public class TeacherAvailabilityController {
     }
 
     @GetMapping("/student/{teacherId}")
-    public List<TeacherAvailability> getAvailableSlots(
+    public List<AvailabilityResponseDto> getAvailableSlots(
             @PathVariable Long teacherId) {
 
         return teacherAvailabilityService

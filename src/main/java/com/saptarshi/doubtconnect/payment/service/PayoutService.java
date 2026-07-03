@@ -46,6 +46,49 @@ public class PayoutService {
 
         return teacher.getUser().getUsername().equals(username) || user.isPresent() && user.get().getRole().equals("ADMIN");
     }
+
+    @Transactional(readOnly = true)
+    public Optional<PayOutDetailsDto> getPayoutDetails(String username) {
+
+        Optional<TeacherProfile> profile =
+                teacherProfileRepository.findByUserUsername(username);
+
+        if (profile.isEmpty()) {
+            return Optional.empty();
+        }
+
+        PayoutDetails payoutDetails = profile.get().getPayoutDetails();
+
+        if (payoutDetails == null||
+                !"ACTIVE".equals(payoutDetails.getAccountStatus())) {
+            return Optional.empty();
+        }
+
+        PayOutDetailsDto dto = new PayOutDetailsDto();
+
+        if (payoutDetails.getUpiDetails() != null) {
+
+            dto.setUpiId(
+                    payoutDetails.getUpiDetails().getUpiId()
+            );
+
+        } else if (payoutDetails.getBankDetails() != null) {
+
+            dto.setAccountHolderName(
+                    payoutDetails.getBankDetails().getAccountHolderName()
+            );
+
+            dto.setAccountNumber(
+                    payoutDetails.getBankDetails().getAccountNumber()
+            );
+
+            dto.setIfscCode(
+                    payoutDetails.getBankDetails().getIfscCode()
+            );
+        }
+
+        return Optional.of(dto);
+    }
 //    private String createContact(TeacherProfile teacher) {
 //        try {
 //            RestTemplate restTemplate = new RestTemplate();

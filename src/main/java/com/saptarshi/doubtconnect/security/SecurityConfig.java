@@ -61,14 +61,22 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/teacher/getAll"
+                                "/teacher/getAll",
+                                "/teacher/search",
+                                "/teacher/{id}"
                         ).permitAll()
 
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/feedback/**"
+                                "/feedback/teacher/**"
                         ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/feedback/student/**"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT")
 
                         // -------------------- TEACHER --------------------
                         .requestMatchers(
@@ -81,6 +89,11 @@ public class SecurityConfig {
 
                         .requestMatchers("/teacher-availability/**")
                         .hasAnyRole("ADMIN", "TEACHER")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/oauth/google/callback"
+                        ).permitAll()
 
                         .requestMatchers("/oauth/google/**")
                         .hasAnyRole("ADMIN", "TEACHER")
@@ -166,6 +179,22 @@ public class SecurityConfig {
                                 HttpMethod.PUT,
                                 "/payout"
                         ).hasRole("TEACHER")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/payout"
+                        ).hasRole("TEACHER")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session/*"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT", "TEACHER")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/session-event/*"
+                        )
+                        .hasAnyRole("ADMIN", "STUDENT", "TEACHER")
 
                         // -------------------- EVERYTHING ELSE --------------------
 

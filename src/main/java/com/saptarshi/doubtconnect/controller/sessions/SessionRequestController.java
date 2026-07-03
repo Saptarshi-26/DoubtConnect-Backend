@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/session")
@@ -19,6 +20,23 @@ public class SessionRequestController {
 
     @Autowired
     SessionRequestService service;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        Optional<SessionRequestResponseDto> dto =
+                service.getSessionRequestById(
+                        id,
+                        authentication);
+
+        return dto.isPresent()
+                ? new ResponseEntity<>(dto.get(), HttpStatus.OK)
+                : new ResponseEntity<>(
+                "Session Request Not Found",
+                HttpStatus.NOT_FOUND);
+    }
 
     @PostMapping("/save")
     public ResponseEntity<?> saveSession(@RequestBody SessionRequestDTO sessionRequestDTO,

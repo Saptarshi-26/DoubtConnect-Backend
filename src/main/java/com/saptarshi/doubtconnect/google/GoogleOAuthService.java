@@ -5,6 +5,7 @@ import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
@@ -36,7 +37,52 @@ public class GoogleOAuthService {
     @Autowired
     private GoogleCredentialRepository googleCredentialRepository;
 
-    public String getAuthorizationUrl(Long teacherProfileId) {
+    private boolean isOwner(
+            TeacherProfile teacherProfile,
+            Authentication authentication) {
+
+        return teacherProfile.getUser()
+                .getUsername()
+                .equals(authentication.getName());
+    }
+
+    public GoogleConnectionStatusDto isGoogleConnected(
+            Long teacherProfileId,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return new GoogleConnectionStatusDto(false);
+        }
+
+        if (!isOwner(
+                teacher.get(),
+                authentication)) {
+            return new GoogleConnectionStatusDto(false);
+        }
+
+        boolean connected =
+                googleCredentialRepository
+                        .findByTeacherProfile(teacher.get())
+                        .isPresent();
+
+        return new GoogleConnectionStatusDto(connected);
+    }
+
+    public String getAuthorizationUrl(Long teacherProfileId,Authentication authentication) {
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return null;
+        }
+
+        if (!isOwner(teacher.get(), authentication)) {
+            return null;
+        }
+
 
         String url =
                 "https://accounts.google.com/o/oauth2/v2/auth" +
@@ -55,6 +101,12 @@ public class GoogleOAuthService {
 
     @Transactional
     public String saveTeacherCredential(String code, Long teacherProfileId) {
+        Optional<TeacherProfile> teacherProfile =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacherProfile.isEmpty()) {
+            return null;
+        }
 
         RestTemplate restTemplate = new RestTemplate();
 

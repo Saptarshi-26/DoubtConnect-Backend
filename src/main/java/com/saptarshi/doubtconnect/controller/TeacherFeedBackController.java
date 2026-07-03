@@ -8,10 +8,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/feedback")
@@ -19,6 +18,24 @@ public class TeacherFeedBackController {
 
     @Autowired
     private TeacherFeedbackService service;
+
+    @GetMapping("/teacher/{teacherId}")
+    public ResponseEntity<List<ReviewDto>> getTeacherReviews(
+            @PathVariable Long teacherId) {
+
+        return ResponseEntity.ok(
+                service.getTeacherReviews(teacherId));
+    }
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<List<ReviewDto>> getStudentReviews(
+            @PathVariable Long studentId,
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                service.getStudentReviews(
+                        studentId,
+                        authentication));
+    }
 
     @PostMapping("/review")
     public ResponseEntity<String> addReview(@RequestBody ReviewDto dto,

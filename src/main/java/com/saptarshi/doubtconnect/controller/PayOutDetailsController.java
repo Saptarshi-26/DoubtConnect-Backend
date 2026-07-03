@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/payout")
 public class PayOutDetailsController {
@@ -15,6 +17,16 @@ public class PayOutDetailsController {
     @Autowired
     private PayoutService payoutService;
 
+    @GetMapping
+    public ResponseEntity<?> getPayoutDetails(Authentication authentication) {
+
+        Optional<PayOutDetailsDto> details =
+                payoutService.getPayoutDetails(authentication.getName());
+
+        return details.isPresent()
+                ? new ResponseEntity<>(details.get(), HttpStatus.OK)
+                : new ResponseEntity<>("No payout details found", HttpStatus.NOT_FOUND);
+    }
     @PostMapping
     public ResponseEntity<?> savePayoutDetails(
             @RequestBody PayOutDetailsDto dto,
