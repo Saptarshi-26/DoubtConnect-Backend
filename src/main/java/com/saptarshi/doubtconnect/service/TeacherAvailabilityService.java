@@ -105,7 +105,9 @@ public class TeacherAvailabilityService {
                             .between(today, lastDate);
 
             if (daysRemaining > 10) {
-                return new ArrayList<>();
+                throw new RuntimeException(
+                        "New slots can only be generated when 10 or fewer days remain in your current schedule."
+                );
             }
 
             startDate = lastDate.plusDays(1);
