@@ -60,7 +60,7 @@ public class TeacherAvailabilityService {
             Authentication authentication) {
 
         Optional<TeacherProfile> teacher =
-            teacherProfileRepository.findById(teacherProfileId);
+                teacherProfileRepository.findById(teacherProfileId);
 
         if (teacher.isEmpty()) {
             return new ArrayList<>();
@@ -77,7 +77,6 @@ public class TeacherAvailabilityService {
             throw new RuntimeException("GOOGLE_NOT_CONNECTED");
         }
 
-
         LocalDate today = LocalDate.now();
 
         List<TeacherAvailability> futureSlots =
@@ -90,7 +89,11 @@ public class TeacherAvailabilityService {
 
         if (futureSlots.isEmpty()) {
 
-            startDate = today;
+            if (LocalTime.now().isBefore(LocalTime.of(18, 0))) {
+                startDate = today;
+            } else {
+                startDate = today.plusDays(1);
+            }
 
         } else {
 
@@ -123,17 +126,20 @@ public class TeacherAvailabilityService {
                  time.isBefore(LocalTime.of(18, 0));
                  time = time.plusMinutes(30)) {
 
+                LocalDateTime slotStart =
+                        LocalDateTime.of(currentDate, time);
+
+                if (slotStart.isBefore(LocalDateTime.now())) {
+                    continue;
+                }
+
                 TeacherAvailability slot = new TeacherAvailability();
 
                 slot.setTeacherProfile(teacher.get());
 
-                slot.setStartTime(
-                        LocalDateTime.of(currentDate, time));
+                slot.setStartTime(slotStart);
 
-                slot.setEndTime(
-                        LocalDateTime.of(
-                                currentDate,
-                                time.plusMinutes(30)));
+                slot.setEndTime(slotStart.plusMinutes(30));
 
                 newSlots.add(slot);
             }

@@ -32,14 +32,28 @@ public class PayOutDetailsController {
             @RequestBody PayOutDetailsDto dto,
             Authentication authentication) {
 
-        String response = payoutService.savePayoutDetails(
-                dto,
-                authentication.getName()
-        );
+        try {
 
-        return response.equals("Account details added successfully ")
-                ? new ResponseEntity<>(response, HttpStatus.CREATED)
-                : new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            String response = payoutService.savePayoutDetails(
+                    dto,
+                    authentication.getName()
+            );
+
+            System.out.println(response);
+
+            return response.equals("Account details added successfully")
+                    ? new ResponseEntity<>(response, HttpStatus.CREATED)
+                    : new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
     @PutMapping
     public ResponseEntity<?> updatePayoutDetails(
@@ -51,7 +65,7 @@ public class PayOutDetailsController {
                 authentication.getName()
         );
 
-        return response.equals("Update successful ")
+        return response.equals("Update successful")
                 ? new ResponseEntity<>(response, HttpStatus.OK)
                 : new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }

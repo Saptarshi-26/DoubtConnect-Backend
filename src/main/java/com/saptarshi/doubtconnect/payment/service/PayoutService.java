@@ -290,10 +290,10 @@ public class PayoutService {
 
 
                 teacherProfileRepository.save(profile.get());
-            } else return "Account details already saved ";
+            } else return "Account details already saved";
         } else return "Profile not found ";
 
-        return "Account details added successfully ";
+        return "Account details added successfully";
     }
 
     @Transactional
@@ -333,11 +333,11 @@ public class PayoutService {
                 }
                 profile.get().setPayoutDetails(payoutDetails);
                 teacherProfileRepository.save(profile.get());
-                return "Update successful ";
+                return "Update successful";
             }
-            else return "No existing payment details found , need to add payment details first ";
+            else return "No existing payment details found , need to add payment details first";
         }
-        else return "Profile not found ";
+        else return "Profile not found";
     }
 
 }
