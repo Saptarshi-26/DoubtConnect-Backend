@@ -91,6 +91,10 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "TEACHER")
 
                         .requestMatchers(
+                                "/google/verify"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 HttpMethod.GET,
                                 "/oauth/google/callback"
                         ).permitAll()
