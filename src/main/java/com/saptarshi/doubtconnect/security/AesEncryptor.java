@@ -19,10 +19,16 @@ public class AesEncryptor implements AttributeConverter<String, String> {
     private static final String ALGORITHM = "AES";
 
     private SecretKeySpec getKey() {
-        byte[] keyBytes = SECRET_KEY.getBytes();
-        byte[] key = new byte[16];
-        System.arraycopy(keyBytes, 0, key, 0, Math.min(keyBytes.length, key.length));
-        return new SecretKeySpec(key, ALGORITHM);
+
+        if (SECRET_KEY == null || SECRET_KEY.length() != 16) {
+            throw new IllegalStateException(
+                    "aes.secret must be exactly 16 characters long.");
+        }
+
+        return new SecretKeySpec(
+                SECRET_KEY.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                ALGORITHM
+        );
     }
 
     @Override

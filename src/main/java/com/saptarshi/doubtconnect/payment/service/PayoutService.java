@@ -245,16 +245,21 @@ public class PayoutService {
                 if (payoutDetails == null) {
                     payoutDetails = new PayoutDetails();
                 }
-                if (detailsDto.getUpiId()!=null && !detailsDto.getUpiId().isEmpty()) {
+                if (detailsDto.getUpiId() != null &&
+                        !detailsDto.getUpiId().isBlank()) {
                     UpiDetails upiDetails = new UpiDetails();
                     upiDetails.setUpiId(detailsDto.getUpiId());
                     payoutDetails.setUpiDetails(upiDetails);
                     payoutDetails.setBankDetails(null);
                 } else {
                     if (detailsDto.getAccountNumber() == null ||
+                            detailsDto.getAccountNumber().isBlank() ||
                             detailsDto.getIfscCode() == null ||
-                            detailsDto.getAccountHolderName() == null) {
-                        return "Please provide either UPI ID or complete bank details";
+                            detailsDto.getIfscCode().isBlank() ||
+                            detailsDto.getAccountHolderName() == null ||
+                            detailsDto.getAccountHolderName().isBlank()) {
+
+                        return "Please provide complete bank details";
                     }
                     BankDetails bankDetails = new BankDetails();
                     bankDetails.setAccountNumber(detailsDto.getAccountNumber());
@@ -302,7 +307,8 @@ public class PayoutService {
         if(profile.isPresent() && isOwner(profile.get(),username)){
             if(profile.get().getPayoutDetails()!=null){
                 PayoutDetails payoutDetails = profile.get().getPayoutDetails();
-                if(detailsDto.getUpiId()!=null && !detailsDto.getUpiId().isEmpty()){
+                if (detailsDto.getUpiId() != null &&
+                        !detailsDto.getUpiId().isBlank()){
                     UpiDetails upiDetails = new UpiDetails();
                     upiDetails.setUpiId(detailsDto.getUpiId());
                     payoutDetails.setUpiDetails(upiDetails);
@@ -310,8 +316,12 @@ public class PayoutService {
                 }
                 else {
                     if (detailsDto.getAccountNumber() == null ||
+                            detailsDto.getAccountNumber().isBlank() ||
                             detailsDto.getIfscCode() == null ||
-                            detailsDto.getAccountHolderName() == null) {
+                            detailsDto.getIfscCode().isBlank() ||
+                            detailsDto.getAccountHolderName() == null ||
+                            detailsDto.getAccountHolderName().isBlank()) {
+
                         return "Please provide complete bank details";
                     }
                     BankDetails bankDetails = new BankDetails();
