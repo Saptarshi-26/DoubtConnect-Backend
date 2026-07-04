@@ -18,4 +18,10 @@ public interface SessionRequestRepository extends JpaRepository<SessionRequest, 
  List<SessionRequest> findByStudentProfileAndStatus(
          StudentProfile studentProfile,
          String status);
+ boolean existsByStudentProfileAndTeacherProfileAndDescriptionAndStatus(
+         StudentProfile studentProfile,
+         TeacherProfile teacherProfile,
+         String description,
+         String status
+ );
 }

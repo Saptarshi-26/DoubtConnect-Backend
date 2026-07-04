@@ -135,13 +135,52 @@ public class SessionRequestService {
 
         if(student.isPresent() && teacher.isPresent()) {
 
-            if(!ownership(authentication,student.get().getUser().getUsername()))return false;
+            if (!ownership(authentication,
+                    student.get().getUser().getUsername())) {
+                return false;
+            }
+
+            if (dto.getSubject() == null ||
+                    dto.getSubject().trim().isBlank()) {
+                return false;
+            }
+
+            if (dto.getDescription() == null ||
+                    dto.getDescription().trim().isBlank()) {
+                return false;
+            }
+
+            if (dto.getSubject().trim().length() > 100) {
+                return false;
+            }
+
+            if (dto.getDescription().trim().length() > 1000) {
+                return false;
+            }
+
+            if (dto.getSessionDuration() != 30 &&
+                    dto.getSessionDuration() != 60 &&
+                    dto.getSessionDuration() != 90 &&
+                    dto.getSessionDuration() != 120) {
+                return false;
+            }
+
+            if (sessionRequestRepository
+                    .existsByStudentProfileAndTeacherProfileAndDescriptionAndStatus(
+                            student.get(),
+                            teacher.get(),
+                            dto.getDescription().trim(),
+                            "PENDING")) {
+
+                return false;
+            }
 
             SessionRequest request = new SessionRequest();
 
+
             request.setStatus("PENDING");
-            request.setSubject(dto.getSubject());
-            request.setDescription(dto.getDescription());
+            request.setSubject(dto.getSubject().trim());
+            request.setDescription(dto.getDescription().trim());
             request.setStudentProfile(student.get());
             request.setTeacherProfile(teacher.get());
             request.setSessionDuration(dto.getSessionDuration());
