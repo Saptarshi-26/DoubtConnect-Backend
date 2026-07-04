@@ -5,6 +5,7 @@ import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.entity.User;
+import com.saptarshi.doubtconnect.google.EmailService;
 import com.saptarshi.doubtconnect.payment.entity.PayoutDetails;
 import com.saptarshi.doubtconnect.payment.entity.SessionPaymentDetails;
 import com.saptarshi.doubtconnect.repository.SessionEventRepository;
@@ -38,6 +39,9 @@ public class SessionEventService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     private boolean ownerShip(String username, Authentication authentication) {
 
@@ -264,65 +268,97 @@ public class SessionEventService {
         List<SessionEvent> sessions = sessionEventRepository.findAll();
 
         LocalDateTime now = LocalDateTime.now();
+
         for (SessionEvent session : sessions) {
+
             boolean updated = false;
+
+            // Session reminder
+            if (!session.isReminderSent()
+                    && "UPCOMING".equals(session.getEventStatus())
+                    && !now.isBefore(session.getStartTime().minusHours(24))) {
+
+                emailService.sendSessionReminderEmail(
+                        session.getStudentProfile().getGoogleEmail(),
+                        session.getStudentProfile().getUser().getUsername()
+                );
+
+                emailService.sendSessionReminderEmail(
+                        session.getTeacherProfile().getGoogleEmail(),
+                        session.getTeacherProfile().getUser().getUsername()
+                );
+
+                session.setReminderSent(true);
+                updated = true;
+            }
+
             if ("UPCOMING".equals(session.getEventStatus())
                     && !now.isBefore(session.getStartTime())) {
 
                 session.setEventStatus("ONGOING");
-                updated=true;
+                updated = true;
             }
+
             if ("ONGOING".equals(session.getEventStatus())
                     && !now.isBefore(session.getEndTime())) {
 
                 session.setEventStatus("COMPLETED");
-                updated=true;
+                updated = true;
             }
+
             int duration = session.getSessionRequest().getSessionDuration();
 
-            long paymentAfterMinutes =
-                    Math.round(duration * 0.35);
+            long paymentAfterMinutes = Math.round(duration * 0.35);
 
             if (!session.isPaymentAvailable()
                     && "ONGOING".equals(session.getEventStatus())
                     && !now.isBefore(
                     session.getStartTime().plusMinutes(paymentAfterMinutes))) {
 
-                PayoutDetails payout = session.getTeacherProfile().getPayoutDetails();
+                PayoutDetails payout =
+                        session.getTeacherProfile().getPayoutDetails();
 
-                if (payout != null&&
-                        "ACTIVE".equals(payout.getAccountStatus())) {
+                if (payout != null
+                        && "ACTIVE".equals(payout.getAccountStatus())) {
 
-
-                    SessionPaymentDetails paymentDetails = new SessionPaymentDetails();
+                    SessionPaymentDetails paymentDetails =
+                            new SessionPaymentDetails();
 
                     if (payout.getUpiDetails() != null) {
 
                         paymentDetails.setUpiId(
-                                payout.getUpiDetails().getUpiId()
-                        );
+                                payout.getUpiDetails().getUpiId());
 
                     } else if (payout.getBankDetails() != null) {
 
                         paymentDetails.setAccountNumber(
-                                payout.getBankDetails().getAccountNumber()
-                        );
+                                payout.getBankDetails().getAccountNumber());
 
                         paymentDetails.setIfscCode(
-                                payout.getBankDetails().getIfscCode()
-                        );
+                                payout.getBankDetails().getIfscCode());
 
                         paymentDetails.setAccountHolderName(
-                                payout.getBankDetails().getAccountHolderName()
-                        );
+                                payout.getBankDetails().getAccountHolderName());
                     }
 
                     session.setSessionPaymentDetails(paymentDetails);
                     session.setPaymentAvailable(true);
+
+                    emailService.sendPaymentAvailableEmail(
+                            session.getStudentProfile().getGoogleEmail(),
+                            session.getStudentProfile().getUser().getUsername()
+                    );
+
+                    emailService.sendPaymentAvailableEmail(
+                            session.getTeacherProfile().getGoogleEmail(),
+                            session.getTeacherProfile().getUser().getUsername()
+                    );
+
                     updated = true;
                 }
             }
-            if(updated){
+
+            if (updated) {
                 sessionEventRepository.save(session);
             }
         }

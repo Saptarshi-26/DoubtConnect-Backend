@@ -38,6 +38,9 @@ public class StudentProfile {
     @OneToOne
     private User user;
 
+    @Column(nullable = false, unique = true)
+    private String googleEmail;
+
 
 
 

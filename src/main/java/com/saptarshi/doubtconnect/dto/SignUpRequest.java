@@ -24,5 +24,8 @@ public class SignUpRequest {
     private List<String> subjects;
     private double ratePerThirtyMin;
 
+    // google token for google mail
+    private String googleIdToken;
+
 
 }

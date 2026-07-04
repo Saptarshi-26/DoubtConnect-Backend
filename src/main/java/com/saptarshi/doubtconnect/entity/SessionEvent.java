@@ -58,4 +58,7 @@ public class SessionEvent {
     @JoinColumn(name = "teacherProfile_id")
     private TeacherProfile teacherProfile;
 
+    @Column(nullable = false)
+    private boolean reminderSent = false;
+
 }

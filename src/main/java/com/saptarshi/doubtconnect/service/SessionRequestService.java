@@ -5,6 +5,7 @@ import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
 import com.saptarshi.doubtconnect.dto.SessionRequestResponseDto;
 import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
 import com.saptarshi.doubtconnect.entity.*;
+import com.saptarshi.doubtconnect.google.EmailService;
 import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -37,6 +38,9 @@ public class SessionRequestService {
 
     @Autowired
     private TeacherAvailabilityRepository teacherAvailabilityRepository;
+
+    @Autowired
+    private EmailService emailService;
 
 
     private boolean ownership(Authentication authentication, String username){
@@ -274,6 +278,10 @@ public class SessionRequestService {
 
             session.get().setStatus("ACCEPTED");
             sessionRequestRepository.save(session.get());
+            emailService.sendSessionAcceptedEmail(
+                    session.get().getStudentProfile().getGoogleEmail(),
+                    session.get().getStudentProfile().getUser().getUsername()
+            );
             return "ACCEPTED";
         }
         return "Session or Teacher not found ";
@@ -293,6 +301,10 @@ public class SessionRequestService {
 
             session.get().setStatus("REJECTED");
             sessionRequestRepository.save(session.get());
+            emailService.sendSessionRejectedEmail(
+                    session.get().getStudentProfile().getGoogleEmail(),
+                    session.get().getStudentProfile().getUser().getUsername()
+            );
             return "REJECTED";
         }
         return "Session or Teacher not found ";

@@ -53,5 +53,8 @@ public class TeacherProfile {
     @JoinColumn(name="payout_details_id")
     private PayoutDetails payoutDetails;
 
+    @Column(nullable = false, unique = true)
+    private String googleEmail;
+
 
 }

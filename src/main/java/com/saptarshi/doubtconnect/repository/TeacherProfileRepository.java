@@ -10,4 +10,5 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile,L
     public Optional<TeacherProfile> findByUser(User user);
 
     Optional<TeacherProfile> findByUserUsername(String username);
+    Optional<TeacherProfile> findByGoogleEmail(String googleEmail);
 }

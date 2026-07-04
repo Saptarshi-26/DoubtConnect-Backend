@@ -10,4 +10,5 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile,L
     public Optional<StudentProfile> findByUser(User user);
 
     Optional<StudentProfile> findByUserUsername(String name);
+    Optional<StudentProfile> findByGoogleEmail(String googleEmail);
 }
