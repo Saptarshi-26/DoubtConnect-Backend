@@ -2,6 +2,8 @@ package com.saptarshi.doubtconnect.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class SessionRequestResponseDto {
     private Long id;
@@ -27,4 +29,6 @@ public class SessionRequestResponseDto {
     private String teacherName;
 
     private String teacherProfilePictureUrl;
+
+    private List<SessionRequestImageDto> images;
 }

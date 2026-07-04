@@ -1,9 +1,8 @@
 package com.saptarshi.doubtconnect.service;
 
-import com.saptarshi.doubtconnect.dto.SessionActionDTO;
-import com.saptarshi.doubtconnect.dto.SessionRequestDTO;
-import com.saptarshi.doubtconnect.dto.SessionRequestResponseDto;
-import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.saptarshi.doubtconnect.dto.*;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.google.EmailService;
 import com.saptarshi.doubtconnect.repository.*;
@@ -11,9 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -41,6 +43,12 @@ public class SessionRequestService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SessionRequestImageRepository sessionRequestImageRepository;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
 
     private boolean ownership(Authentication authentication, String username){
@@ -90,6 +98,20 @@ public class SessionRequestService {
         dto.setStatus(sessionRequest.getStatus());
         dto.setSessionDuration(sessionRequest.getSessionDuration());
         dto.setTotalAmount(sessionRequest.getTotalAmount());
+        dto.setImages(
+                sessionRequest.getImages()
+                        .stream()
+                        .map(image -> {
+                            SessionRequestImageDto imageDto =
+                                    new SessionRequestImageDto();
+
+                            imageDto.setId(image.getId());
+                            imageDto.setImageUrl(image.getImageUrl());
+
+                            return imageDto;
+                        })
+                        .toList()
+        );
 
         dto.setStudentId(
                 sessionRequest.getStudentProfile().getId());
@@ -119,80 +141,139 @@ public class SessionRequestService {
     }
 
     @Transactional
-    public boolean sendRequest(SessionRequestDTO dto, Authentication authentication){
-//        System.out.println("Student ID = " + dto.getStudentProfileId());
-//        System.out.println("Teacher ID = " + dto.getTeacherProfileId());
+    public boolean sendRequest(
+            SessionRequestDTO dto,
+            MultipartFile[] images,
+            Authentication authentication) {
+
         if (dto.getStudentProfileId() == null || dto.getTeacherProfileId() == null) {
             return false;
         }
+
         Optional<StudentProfile> student =
                 studentProfileRepository.findById(dto.getStudentProfileId());
-
 
         Optional<TeacherProfile> teacher =
                 teacherProfileRepository.findById(dto.getTeacherProfileId());
 
-
-        if(student.isPresent() && teacher.isPresent()) {
-
-            if (!ownership(authentication,
-                    student.get().getUser().getUsername())) {
-                return false;
-            }
-
-            if (dto.getSubject() == null ||
-                    dto.getSubject().trim().isBlank()) {
-                return false;
-            }
-
-            if (dto.getDescription() == null ||
-                    dto.getDescription().trim().isBlank()) {
-                return false;
-            }
-
-            if (dto.getSubject().trim().length() > 100) {
-                return false;
-            }
-
-            if (dto.getDescription().trim().length() > 1000) {
-                return false;
-            }
-
-            if (dto.getSessionDuration() != 30 &&
-                    dto.getSessionDuration() != 60 &&
-                    dto.getSessionDuration() != 90 &&
-                    dto.getSessionDuration() != 120) {
-                return false;
-            }
-
-            if (sessionRequestRepository
-                    .existsByStudentProfileAndTeacherProfileAndDescriptionAndStatus(
-                            student.get(),
-                            teacher.get(),
-                            dto.getDescription().trim(),
-                            "PENDING")) {
-
-                return false;
-            }
-
-            SessionRequest request = new SessionRequest();
-
-
-            request.setStatus("PENDING");
-            request.setSubject(dto.getSubject().trim());
-            request.setDescription(dto.getDescription().trim());
-            request.setStudentProfile(student.get());
-            request.setTeacherProfile(teacher.get());
-            request.setSessionDuration(dto.getSessionDuration());
-            request.setTotalAmount((dto.getSessionDuration()/30.0)*teacher.get().getRatePerThirtyMin());
-
-
-            sessionRequestRepository.save(request);
-
-            return true;
+        if (student.isEmpty() || teacher.isEmpty()) {
+            return false;
         }
 
-        return false;
+        if (!ownership(authentication,
+                student.get().getUser().getUsername())) {
+            return false;
+        }
+
+        if (dto.getSubject() == null || dto.getSubject().trim().isBlank()) {
+            return false;
+        }
+
+        if (dto.getDescription() == null || dto.getDescription().trim().isBlank()) {
+            return false;
+        }
+
+        if (dto.getSubject().trim().length() > 100) {
+            return false;
+        }
+
+        if (dto.getDescription().trim().length() > 1000) {
+            return false;
+        }
+
+        if (dto.getSessionDuration() != 30 &&
+                dto.getSessionDuration() != 60 &&
+                dto.getSessionDuration() != 90 &&
+                dto.getSessionDuration() != 120) {
+            return false;
+        }
+
+        if (sessionRequestRepository
+                .existsByStudentProfileAndTeacherProfileAndDescriptionAndStatus(
+                        student.get(),
+                        teacher.get(),
+                        dto.getDescription().trim(),
+                        "PENDING")) {
+
+            return false;
+        }
+
+        SessionRequest request = new SessionRequest();
+
+        request.setStatus("PENDING");
+        request.setSubject(dto.getSubject().trim());
+        request.setDescription(dto.getDescription().trim());
+        request.setStudentProfile(student.get());
+        request.setTeacherProfile(teacher.get());
+        request.setSessionDuration(dto.getSessionDuration());
+        request.setTotalAmount(
+                (dto.getSessionDuration() / 30.0)
+                        * teacher.get().getRatePerThirtyMin());
+
+        sessionRequestRepository.save(request);
+        if (images != null) {
+
+            if (images.length > 5) {
+                return false;
+            }
+
+            for (MultipartFile file : images) {
+
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+
+                if (file.getSize() > 5 * 1024 * 1024) {
+                    return false;
+                }
+
+                String contentType = file.getContentType();
+
+                if (contentType == null ||
+                        !(contentType.equals("image/jpeg")
+                                || contentType.equals("image/png")
+                                || contentType.equals("image/webp"))) {
+
+                    return false;
+                }
+            }
+        }
+
+        if (images != null) {
+
+            for (MultipartFile file : images) {
+
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+
+                try {
+
+                    Map<?, ?> result =
+                            cloudinary.uploader().upload(
+                                    file.getBytes(),
+                                    ObjectUtils.emptyMap());
+
+                    SessionRequestImage image =
+                            new SessionRequestImage();
+
+                    image.setImageUrl(
+                            result.get("secure_url").toString());
+
+                    image.setPublicId(
+                            result.get("public_id").toString());
+
+                    image.setSessionRequest(request);
+
+                    sessionRequestImageRepository.save(image);
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        return true;
     }
 
     public List<SessionRequestResponseDto> findByStudentProfile(Long id,Authentication authentication) {
@@ -220,6 +301,20 @@ public class SessionRequestService {
                         dto.setStatus(request.getStatus());
                         dto.setSessionDuration(request.getSessionDuration());
                         dto.setTotalAmount(request.getTotalAmount());
+                        dto.setImages(
+                                request.getImages()
+                                        .stream()
+                                        .map(image -> {
+                                            SessionRequestImageDto imageDto =
+                                                    new SessionRequestImageDto();
+
+                                            imageDto.setId(image.getId());
+                                            imageDto.setImageUrl(image.getImageUrl());
+
+                                            return imageDto;
+                                        })
+                                        .toList()
+                        );
 
                         dto.setStudentId(
                                 request.getStudentProfile().getId());
@@ -275,6 +370,20 @@ public class SessionRequestService {
                         dto.setStatus(request.getStatus());
                         dto.setSessionDuration(request.getSessionDuration());
                         dto.setTotalAmount(request.getTotalAmount());
+                        dto.setImages(
+                                request.getImages()
+                                        .stream()
+                                        .map(image -> {
+                                            SessionRequestImageDto imageDto =
+                                                    new SessionRequestImageDto();
+
+                                            imageDto.setId(image.getId());
+                                            imageDto.setImageUrl(image.getImageUrl());
+
+                                            return imageDto;
+                                        })
+                                        .toList()
+                        );
 
                         dto.setStudentId(
                                 request.getStudentProfile().getId());

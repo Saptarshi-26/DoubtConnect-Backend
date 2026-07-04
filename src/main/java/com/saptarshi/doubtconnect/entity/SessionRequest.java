@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,5 +37,12 @@ public class SessionRequest {
     @ManyToOne
     @JoinColumn(name = "teacher_id", nullable = false)
     private TeacherProfile teacherProfile;
+
+    @OneToMany(
+            mappedBy = "sessionRequest",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<SessionRequestImage> images = new ArrayList<>();
 
 }

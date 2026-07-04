@@ -7,9 +7,11 @@ import com.saptarshi.doubtconnect.dto.UpdateSessionDTO;
 import com.saptarshi.doubtconnect.service.SessionRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,14 +40,22 @@ public class SessionRequestController {
                 HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping("/save")
-    public ResponseEntity<?> saveSession(@RequestBody SessionRequestDTO sessionRequestDTO,
-                                         Authentication authentication){
-        boolean sendRequest = service.sendRequest(sessionRequestDTO,authentication);
-        return sendRequest?new ResponseEntity<>("Session Request created", HttpStatus.CREATED):
-                new ResponseEntity<>("Student or Teacher not found ",HttpStatus.NOT_FOUND);
-    }
+    @PostMapping(
+            value = "/save",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<?> saveSession(
+            @RequestPart("request") SessionRequestDTO sessionRequestDTO,
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            Authentication authentication) {
 
+        boolean sendRequest =
+                service.sendRequest(sessionRequestDTO, images, authentication);
+
+        return sendRequest
+                ? new ResponseEntity<>("Session Request created", HttpStatus.CREATED)
+                : new ResponseEntity<>("Student or Teacher not found", HttpStatus.NOT_FOUND);
+    }
     @GetMapping("/student/{id}")
     public ResponseEntity<List<SessionRequestResponseDto>> sessionOfStudent(@PathVariable Long id,Authentication authentication){
 
