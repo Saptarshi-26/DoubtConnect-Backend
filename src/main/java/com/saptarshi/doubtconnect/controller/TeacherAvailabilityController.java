@@ -65,11 +65,11 @@ public class TeacherAvailabilityController {
                         authentication);
     }
 
-    @GetMapping("/student/{teacherId}")
+    @GetMapping("/student/{teacherId}/{studentId}")
     public List<AvailabilityResponseDto> getAvailableSlots(
-            @PathVariable Long teacherId) {
+            @PathVariable Long teacherId,@PathVariable long studentId , Authentication authentication) {
 
         return teacherAvailabilityService
-                .getAvailableSlots(teacherId);
+                .getAvailableSlots(teacherId,studentId,authentication);
     }
 }

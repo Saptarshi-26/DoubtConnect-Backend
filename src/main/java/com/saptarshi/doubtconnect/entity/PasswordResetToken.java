@@ -2,8 +2,7 @@ package com.saptarshi.doubtconnect.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-
+import jakarta.persistence.Id;
 import java.time.LocalDateTime;
 
 @Entity

@@ -2,10 +2,7 @@ package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.AvailabilityDto;
 import com.saptarshi.doubtconnect.dto.AvailabilityResponseDto;
-import com.saptarshi.doubtconnect.entity.SessionEvent;
-import com.saptarshi.doubtconnect.entity.TeacherAvailability;
-import com.saptarshi.doubtconnect.entity.TeacherProfile;
-import com.saptarshi.doubtconnect.entity.User;
+import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.google.GoogleCredential;
 import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
 import com.saptarshi.doubtconnect.repository.*;
@@ -43,6 +40,9 @@ public class TeacherAvailabilityService {
 
     @Autowired
     private GoogleCredentialRepository googleCredentialRepository;
+
+    @Autowired
+    private  StudentProfileRepository studentProfileRepository;
 
     private boolean isOwner(TeacherProfile teacher, String username) {
 
@@ -178,16 +178,26 @@ public class TeacherAvailabilityService {
         }
 
         // Enable selected slots
+        // Enable selected slots
         List<TeacherAvailability> selectedSlots =
                 teacherAvailabilityRepository.findAllById(slotIds);
 
         for (TeacherAvailability slot : selectedSlots) {
 
-            if (slot.getTeacherProfile().getId().equals(teacherProfileId)
-                    && !slot.isBooked()) {
-
-                slot.setAvailable(true);
+            if (!slot.getTeacherProfile().getId().equals(teacherProfileId)) {
+                continue;
             }
+
+            if (slot.isBooked()) {
+                continue;
+            }
+
+            if (slot.getStartTime().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException(
+                        "Past time slots cannot be made available.");
+            }
+
+            slot.setAvailable(true);
         }
 
         return teacherAvailabilityRepository.saveAll(allSlots)
@@ -210,7 +220,12 @@ public class TeacherAvailabilityService {
 
 
     public List<AvailabilityResponseDto> getAvailableSlots(
-            Long teacherProfileId) {
+            Long teacherProfileId , long studentProfileId,Authentication authentication) {
+
+        Optional<StudentProfile> studentProfile = studentProfileRepository.findById(studentProfileId);
+        if(studentProfile.isEmpty()) return new ArrayList<>();
+        if(!studentProfile.get().getUser().getUsername().equals(authentication.getName()))
+            return  new ArrayList<>();
 
         Optional<TeacherProfile> teacher =
                 teacherProfileRepository.findById(teacherProfileId);
