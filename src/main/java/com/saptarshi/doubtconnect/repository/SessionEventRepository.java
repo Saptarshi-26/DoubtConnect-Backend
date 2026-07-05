@@ -25,4 +25,20 @@ public interface SessionEventRepository extends JpaRepository<SessionEvent,Long>
     List<SessionEvent> findByStudentProfileAndEventStatus(
             StudentProfile studentProfile,
             String eventStatus);
+    List<SessionEvent>
+    findByTeacherProfileAndEventStatusOrderByStartTimeAsc(
+            TeacherProfile teacherProfile,
+            String eventStatus
+    );
+
+    List<SessionEvent>
+    findByStudentProfileAndEventStatusOrderByStartTimeAsc(
+            StudentProfile studentProfile,
+            String eventStatus
+    );
+    List<SessionEvent> findByStudentProfileOrderByStartTimeAsc(
+            StudentProfile studentProfile);
+
+    List<SessionEvent> findByTeacherProfileOrderByStartTimeAsc(
+            TeacherProfile teacherProfile);
 }

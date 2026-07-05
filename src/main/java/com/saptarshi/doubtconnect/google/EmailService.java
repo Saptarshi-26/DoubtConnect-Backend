@@ -108,4 +108,60 @@ public class EmailService {
         );
     }
 
+    public void sendPasswordResetEmail(
+            String to,
+            String resetLink) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(to);
+
+        message.setSubject(
+                "Reset Your DoubtConnect Password");
+
+        message.setText(
+                "Hello,\n\n" +
+
+                        "We received a request to reset your DoubtConnect password.\n\n" +
+
+                        "Click the link below to reset your password:\n\n" +
+
+                        resetLink +
+
+                        "\n\nThis link is valid for 5 minutes.\n\n" +
+
+                        "If you did not request a password reset, you can safely ignore this email.\n\n" +
+
+                        "Regards,\n" +
+
+                        "DoubtConnect Team");
+
+        mailSender.send(message);
+    }
+    public void sendPasswordChangedEmail(
+            String to) {
+
+        SimpleMailMessage message =
+                new SimpleMailMessage();
+
+        message.setTo(to);
+
+        message.setSubject(
+                "Your DoubtConnect Password Was Changed");
+
+        message.setText(
+                "Hello,\n\n" +
+
+                        "Your DoubtConnect password has been changed successfully.\n\n" +
+
+                        "If you did not perform this action, please contact support immediately.\n\n" +
+
+                        "Regards,\n" +
+
+                        "DoubtConnect Team");
+
+        mailSender.send(message);
+    }
+
 }

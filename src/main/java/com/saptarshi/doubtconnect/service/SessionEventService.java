@@ -1,6 +1,7 @@
 package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.SessionEventResponseDto;
+import com.saptarshi.doubtconnect.dto.SessionPaymentDetailsDto;
 import com.saptarshi.doubtconnect.entity.SessionEvent;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
@@ -43,6 +44,78 @@ public class SessionEventService {
     @Autowired
     private EmailService emailService;
 
+    private SessionEventResponseDto convertToDto(SessionEvent event) {
+
+        SessionEventResponseDto dto = new SessionEventResponseDto();
+
+        dto.setId(event.getId());
+
+        dto.setSessionRequestId(
+                event.getSessionRequest().getId());
+
+        dto.setStudentId(
+                event.getStudentProfile().getId());
+
+        dto.setStudentName(
+                event.getStudentProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setStudentProfilePictureUrl(
+                event.getStudentProfile()
+                        .getProfilePictureUrl());
+
+        dto.setTeacherId(
+                event.getTeacherProfile().getId());
+
+        dto.setTeacherName(
+                event.getTeacherProfile()
+                        .getUser()
+                        .getUsername());
+
+        dto.setTeacherProfilePictureUrl(
+                event.getTeacherProfile()
+                        .getProfilePictureUrl());
+
+        dto.setStartTime(event.getStartTime());
+        dto.setEndTime(event.getEndTime());
+        dto.setMeetLink(event.getMeetLink());
+        dto.setPaymentAvailable(event.isPaymentAvailable());
+        dto.setEventStatus(event.getEventStatus());
+        dto.setRated(event.isRated());
+
+        if (event.isPaymentAvailable()
+                && event.getSessionPaymentDetails() != null) {
+
+            SessionPaymentDetails payment =
+                    event.getSessionPaymentDetails();
+
+            SessionPaymentDetailsDto paymentDto =
+                    new SessionPaymentDetailsDto();
+
+            if (payment.getUpiId() != null &&
+                    !payment.getUpiId().isBlank()) {
+
+                paymentDto.setUpiId(payment.getUpiId());
+
+            } else {
+
+                paymentDto.setAccountHolderName(
+                        payment.getAccountHolderName());
+
+                paymentDto.setAccountNumber(
+                        payment.getAccountNumber());
+
+                paymentDto.setIfscCode(
+                        payment.getIfscCode());
+            }
+
+            dto.setSessionPaymentDetailsDto(paymentDto);
+        }
+
+        return dto;
+    }
+
     private boolean ownerShip(String username, Authentication authentication) {
 
         Optional<User> user = userRepository.findByUsername(authentication.getName());
@@ -82,50 +155,7 @@ public class SessionEventService {
             return Optional.empty();
         }
 
-        SessionEventResponseDto dto =
-                new SessionEventResponseDto();
-
-        dto.setId(sessionEvent.getId());
-
-        dto.setSessionRequestId(
-                sessionEvent.getSessionRequest().getId());
-
-        dto.setStudentId(
-                sessionEvent.getStudentProfile().getId());
-
-        dto.setStudentName(
-                sessionEvent.getStudentProfile()
-                        .getUser()
-                        .getUsername());
-
-        dto.setStudentProfilePictureUrl(
-                sessionEvent.getStudentProfile()
-                        .getProfilePictureUrl());
-
-        dto.setTeacherId(
-                sessionEvent.getTeacherProfile().getId());
-
-        dto.setTeacherName(
-                sessionEvent.getTeacherProfile()
-                        .getUser()
-                        .getUsername());
-
-        dto.setTeacherProfilePictureUrl(
-                sessionEvent.getTeacherProfile()
-                        .getProfilePictureUrl());
-
-        dto.setStartTime(sessionEvent.getStartTime());
-        dto.setEndTime(sessionEvent.getEndTime());
-        dto.setMeetLink(sessionEvent.getMeetLink());
-        dto.setPaymentAvailable(
-                sessionEvent.isPaymentAvailable());
-
-        dto.setEventStatus(
-                sessionEvent.getEventStatus());
-
-        dto.setRated(sessionEvent.isRated());
-
-        return Optional.of(dto);
+        return Optional.of(convertToDto(sessionEvent));
     }
 
     public List<SessionEventResponseDto> getStudentSessions(
@@ -143,45 +173,11 @@ public class SessionEventService {
                 authentication))
             return new ArrayList<>();
 
-        return sessionEventRepository.findByStudentProfile(student.get())
+        return sessionEventRepository
+                .findByStudentProfileOrderByStartTimeAsc(student.get())
                 .stream()
-                .map(event -> {
-
-                    SessionEventResponseDto dto = new SessionEventResponseDto();
-
-                    dto.setId(event.getId());
-
-                    dto.setSessionRequestId(
-                            event.getSessionRequest().getId());
-
-                    dto.setStudentId(
-                            event.getStudentProfile().getId());
-
-                    dto.setStudentName(
-                            event.getStudentProfile().getUser().getUsername());
-
-                    dto.setStudentProfilePictureUrl(
-                            event.getStudentProfile().getProfilePictureUrl());
-
-                    dto.setTeacherId(
-                            event.getTeacherProfile().getId());
-
-                    dto.setTeacherName(
-                            event.getTeacherProfile().getUser().getUsername());
-
-                    dto.setTeacherProfilePictureUrl(
-                            event.getTeacherProfile().getProfilePictureUrl());
-
-                    dto.setStartTime(event.getStartTime());
-                    dto.setEndTime(event.getEndTime());
-                    dto.setMeetLink(event.getMeetLink());
-                    dto.setPaymentAvailable(event.isPaymentAvailable());
-                    dto.setEventStatus(event.getEventStatus());
-                    dto.setRated(event.isRated());
-
-                    return dto;
-
-                }).toList();
+                .map(this::convertToDto)
+                .toList();
     }
 
     public List<SessionEventResponseDto> getTeacherSessions(
@@ -199,64 +195,56 @@ public class SessionEventService {
                 authentication))
             return new ArrayList<>();
 
-        return sessionEventRepository.findByTeacherProfile(teacher.get())
+        return sessionEventRepository
+                .findByTeacherProfileOrderByStartTimeAsc(teacher.get())
                 .stream()
-                .map(event -> {
-
-                    SessionEventResponseDto dto = new SessionEventResponseDto();
-
-                    dto.setId(event.getId());
-
-                    dto.setSessionRequestId(
-                            event.getSessionRequest().getId());
-
-                    dto.setStudentId(
-                            event.getStudentProfile().getId());
-
-                    dto.setStudentName(
-                            event.getStudentProfile().getUser().getUsername());
-
-                    dto.setStudentProfilePictureUrl(
-                            event.getStudentProfile().getProfilePictureUrl());
-
-                    dto.setTeacherId(
-                            event.getTeacherProfile().getId());
-
-                    dto.setTeacherName(
-                            event.getTeacherProfile().getUser().getUsername());
-
-                    dto.setTeacherProfilePictureUrl(
-                            event.getTeacherProfile().getProfilePictureUrl());
-
-                    dto.setStartTime(event.getStartTime());
-                    dto.setEndTime(event.getEndTime());
-                    dto.setMeetLink(event.getMeetLink());
-                    dto.setPaymentAvailable(event.isPaymentAvailable());
-                    dto.setEventStatus(event.getEventStatus());
-                    dto.setRated(event.isRated());
-
-                    return dto;
-
-                }).toList();
+                .map(this::convertToDto)
+                .toList();
     }
 
     public List<SessionEventResponseDto> getUpcomingTeacherSessions(
             long teacherId,
             Authentication authentication) {
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherId);
 
-        return getTeacherSessions(teacherId, authentication)
+        if (teacher.isEmpty())
+            return new ArrayList<>();
+
+        if (!ownerShip(
+                teacher.get().getUser().getUsername(),
+                authentication))
+            return new ArrayList<>();
+
+        return sessionEventRepository
+                .findByTeacherProfileAndEventStatusOrderByStartTimeAsc(
+                        teacher.get(),
+                        "UPCOMING")
                 .stream()
-                .filter(x -> x.getEventStatus().equals("UPCOMING"))
+                .map(this::convertToDto)
                 .toList();
     }
 
     public List<SessionEventResponseDto> getUpcomingStudentSessions(
             long studentId,
             Authentication authentication) {
+        Optional<StudentProfile> student =
+                studentProfileRepository.findById(studentId);
 
-        return getStudentSessions(studentId, authentication)
+        if (student.isEmpty())
+            return new ArrayList<>();
+
+        if (!ownerShip(
+                student.get().getUser().getUsername(),
+                authentication))
+            return new ArrayList<>();
+
+        return sessionEventRepository
+                .findByStudentProfileAndEventStatusOrderByStartTimeAsc(
+                        student.get(),
+                        "UPCOMING")
                 .stream()
-                .filter(x -> x.getEventStatus().equals("UPCOMING"))
+                .map(this::convertToDto)
                 .toList();
     }
 

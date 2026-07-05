@@ -33,4 +33,6 @@ public class SessionEventResponseDto {
     private String eventStatus;
 
     private boolean rated;
+
+    private SessionPaymentDetailsDto sessionPaymentDetailsDto;
 }
