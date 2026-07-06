@@ -1,6 +1,5 @@
-package com.saptarshi.doubtconnect.dto;
+package com.saptarshi.doubtconnect.disabledPayementSystems;
 
-import com.saptarshi.doubtconnect.entity.SessionRequest;
 import lombok.Data;
 
 @Data

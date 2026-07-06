@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
+import com.saptarshi.doubtconnect.dto.UpdateStudentDto;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
@@ -276,6 +277,31 @@ public class StudentService {
         studentProfileRepository.delete(student.get());
 
         userRepository.delete(user);
+
+        return true;
+    }
+
+    public boolean updateProfile(Long id, UpdateStudentDto dto, String username) {
+
+        Optional<StudentProfile> student = studentProfileRepository.findById(id);
+
+        if (student.isEmpty() || !isOwner(student.get(), username)) {
+            return false;
+        }
+
+        if (dto.getGrade() != null && !dto.getGrade().isBlank()) {
+            student.get().setGrade(dto.getGrade());
+        }
+
+        if (dto.getBoard() != null && !dto.getBoard().isBlank()) {
+            student.get().setBoard(dto.getBoard());
+        }
+
+        if (dto.getLanguage() != null && !dto.getLanguage().isBlank()) {
+            student.get().setLanguage(dto.getLanguage());
+        }
+
+        studentProfileRepository.save(student.get());
 
         return true;
     }

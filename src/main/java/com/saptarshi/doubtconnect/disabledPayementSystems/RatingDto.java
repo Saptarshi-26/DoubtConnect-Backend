@@ -1,4 +1,4 @@
-package com.saptarshi.doubtconnect.dto;
+package com.saptarshi.doubtconnect.disabledPayementSystems;
 
 import lombok.Data;
 

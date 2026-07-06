@@ -486,20 +486,19 @@ public class SessionRequestService {
 
             TeacherProfile teacher = event.get().getTeacherProfile();
 
-            Optional<TeacherAvailability> slot =
+            List<TeacherAvailability> bookedSlots =
                     teacherAvailabilityRepository
-                            .findByTeacherProfileAndStartTimeAndEndTime(
-                                    teacher,
-                                    event.get().getStartTime(),
-                                    event.get().getEndTime());
+                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(teacher);
 
-            if (slot.isPresent()) {
-
-                slot.get().setBooked(false);
-                slot.get().setAvailable(true);
-
-                teacherAvailabilityRepository.save(slot.get());
+            for (TeacherAvailability slot : bookedSlots) {
+                if (!slot.getStartTime().isBefore(event.get().getStartTime())
+                        && !slot.getEndTime().isAfter(event.get().getEndTime())) {
+                    slot.setBooked(false);
+                    slot.setAvailable(true);
+                }
             }
+
+            teacherAvailabilityRepository.saveAll(bookedSlots);
 
             sessionEventRepository.delete(event.get());
         }

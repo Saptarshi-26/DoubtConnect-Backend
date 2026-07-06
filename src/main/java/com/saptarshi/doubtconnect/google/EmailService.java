@@ -56,20 +56,6 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendPaymentAvailableEmail(
-            String to,
-            String username) {
-
-        return sendEmail(
-                to,
-                "Session Payment Available",
-                "Hi " + username + ",\n\n" +
-                        "The payment for your completed session is now available.\n\n" +
-                        "You can now view the payment details in DoubtConnect.\n\n" +
-                        "Regards,\n" +
-                        "Team DoubtConnect"
-        );
-    }
     public boolean sendSessionReminderEmail(String to, String username) {
 
         return sendEmail(
@@ -108,60 +94,60 @@ public class EmailService {
         );
     }
 
-    public void sendPasswordResetEmail(
-            String to,
-            String resetLink) {
-
-        SimpleMailMessage message =
-                new SimpleMailMessage();
-
-        message.setTo(to);
-
-        message.setSubject(
-                "Reset Your DoubtConnect Password");
-
-        message.setText(
+    public boolean sendPasswordResetEmail(String to, String resetLink) {
+        return sendEmail(
+                to,
+                "Reset Your DoubtConnect Password",
                 "Hello,\n\n" +
-
                         "We received a request to reset your DoubtConnect password.\n\n" +
-
                         "Click the link below to reset your password:\n\n" +
-
                         resetLink +
-
                         "\n\nThis link is valid for 5 minutes.\n\n" +
-
                         "If you did not request a password reset, you can safely ignore this email.\n\n" +
-
                         "Regards,\n" +
-
-                        "DoubtConnect Team");
-
-        mailSender.send(message);
+                        "Team DoubtConnect"
+        );
     }
-    public void sendPasswordChangedEmail(
-            String to) {
 
-        SimpleMailMessage message =
-                new SimpleMailMessage();
-
-        message.setTo(to);
-
-        message.setSubject(
-                "Your DoubtConnect Password Was Changed");
-
-        message.setText(
+    public boolean sendPasswordChangedEmail(String to) {
+        return sendEmail(
+                to,
+                "Your DoubtConnect Password Was Changed",
                 "Hello,\n\n" +
-
                         "Your DoubtConnect password has been changed successfully.\n\n" +
-
                         "If you did not perform this action, please contact support immediately.\n\n" +
-
                         "Regards,\n" +
+                        "Team DoubtConnect"
+        );
+    }
 
-                        "DoubtConnect Team");
+    public boolean sendStudentPaymentAvailableEmail(
+            String to,
+            String username) {
 
-        mailSender.send(message);
+        return sendEmail(
+                to,
+                "Session Payment Available",
+                "Hi " + username + ",\n\n" +
+                        "The payment for your completed session has been processed successfully.\n\n" +
+                        "Thank you for learning with DoubtConnect.\n\n" +
+                        "Regards,\n" +
+                        "Team DoubtConnect"
+        );
+    }
+    public boolean sendTeacherPaymentAvailableEmail(
+            String to,
+            String username) {
+
+        return sendEmail(
+                to,
+                "Session Payment Available",
+                "Hi " + username + ",\n\n" +
+                        "The payment for your completed session is now available for withdrawal.\n\n" +
+                        "You can view your payout details in your teacher dashboard.\n\n" +
+                        "Regards,\n" +
+                        "Team DoubtConnect"
+        );
     }
 
 }

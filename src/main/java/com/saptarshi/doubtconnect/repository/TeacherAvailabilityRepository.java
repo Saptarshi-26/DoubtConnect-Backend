@@ -25,4 +25,8 @@ public interface TeacherAvailabilityRepository extends JpaRepository<TeacherAvai
     List<TeacherAvailability>
     findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(
             TeacherProfile teacherProfile);
+    List<TeacherAvailability> findByTeacherProfileAndAvailableTrueAndBookedFalseAndStartTimeAfter(
+            TeacherProfile teacherProfile,
+            LocalDateTime startTime
+    );
 }

@@ -249,7 +249,7 @@ public class SessionEventService {
     }
 
 
-    @Scheduled(fixedRate = 120000) // Every 2 minutes
+    @Scheduled(fixedRate = 30000) // Every 30 seconds
     @Transactional
     public void updateSessionEvents() {
 
@@ -332,12 +332,12 @@ public class SessionEventService {
                     session.setSessionPaymentDetails(paymentDetails);
                     session.setPaymentAvailable(true);
 
-                    emailService.sendPaymentAvailableEmail(
+                    emailService.sendStudentPaymentAvailableEmail(
                             session.getStudentProfile().getGoogleEmail(),
                             session.getStudentProfile().getUser().getUsername()
                     );
 
-                    emailService.sendPaymentAvailableEmail(
+                    emailService.sendTeacherPaymentAvailableEmail(
                             session.getTeacherProfile().getGoogleEmail(),
                             session.getTeacherProfile().getUser().getUsername()
                     );

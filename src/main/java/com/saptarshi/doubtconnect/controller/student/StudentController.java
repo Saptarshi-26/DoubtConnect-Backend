@@ -2,6 +2,7 @@ package com.saptarshi.doubtconnect.controller.student;
 
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
+import com.saptarshi.doubtconnect.dto.UpdateStudentDto;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
 import com.saptarshi.doubtconnect.service.StudentService;
@@ -128,5 +129,18 @@ public class StudentController {
         }
 
         return ResponseEntity.ok(student);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateProfile(
+            @PathVariable Long id,
+            @RequestBody UpdateStudentDto dto,
+            Authentication authentication) {
+
+        boolean updated = studentService.updateProfile(id, dto, authentication.getName());
+
+        return updated
+                ? new ResponseEntity<>("Profile updated", HttpStatus.OK)
+                : new ResponseEntity<>("Unable to update profile", HttpStatus.BAD_REQUEST);
     }
 }

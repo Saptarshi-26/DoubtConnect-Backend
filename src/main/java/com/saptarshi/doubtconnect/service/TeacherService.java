@@ -71,13 +71,12 @@ public class TeacherService {
         return teacherProfileRepository.findAll()
                 .stream()
                 .filter(teacher ->
-                        teacher.getPayoutDetails() != null &&
-                                "ACTIVE".equals(teacher.getPayoutDetails().getAccountStatus()))
-                .filter(teacher ->
                         teacher.getSubjects()
                                 .stream()
-                                .map(String::toUpperCase)
-                                .anyMatch(s -> s.equals(searchSubject)))
+                                .anyMatch(x ->
+                                        x.toLowerCase()
+                                                .contains(searchSubject.toLowerCase())))
+
                 .map(teacher -> {
 
                     TeacherDto dto = new TeacherDto();
@@ -270,9 +269,9 @@ public class TeacherService {
             return false;
         }
 
-        if (!teacher.get().getSubjects().contains(dto.getSubject())) {
+        if (!teacher.get().getSubjects().contains(dto.getSubject().trim())) {
 
-            teacher.get().getSubjects().add(dto.getSubject());
+            teacher.get().getSubjects().add(dto.getSubject().trim());
 
             teacherProfileRepository.save(teacher.get());
         }

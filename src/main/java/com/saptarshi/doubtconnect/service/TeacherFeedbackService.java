@@ -1,7 +1,8 @@
 package com.saptarshi.doubtconnect.service;
 
-import com.saptarshi.doubtconnect.dto.RatingDto;
-import com.saptarshi.doubtconnect.dto.ReviewDto;
+import com.saptarshi.doubtconnect.disabledPayementSystems.RatingDto;
+import com.saptarshi.doubtconnect.disabledPayementSystems.ReviewDto;
+import com.saptarshi.doubtconnect.dto.FeedbackDto;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -89,63 +89,47 @@ public class TeacherFeedbackService {
     }
 
     @Transactional
-    public String review(ReviewDto dto,Authentication authentication){
-        Optional<SessionEvent> event = sessionEventRepository.findById(dto.getSessionEventId());
-        if(event.isEmpty())return "Session not found";
-        if (!event.get().getEventStatus().equals("COMPLETED")) {
-            return "Session not completed";
-        }
-        if(reviewRepository.findBySessionEvent(event.get()).isPresent())
-            return "Review already submitted ";
-        if(!ownerShip(event.get().getSessionRequest().getStudentProfile().getUser().getUsername(),authentication))
+    public String submitFeedback(FeedbackDto dto, Authentication authentication) {
+
+        Optional<SessionEvent> eventOpt = sessionEventRepository.findById(dto.getSessionEventId());
+        if (eventOpt.isEmpty()) return "Session not found";
+
+        SessionEvent event = eventOpt.get();
+
+        if (!event.getEventStatus().equals("COMPLETED")) return "Session not completed";
+        if (event.isRated()) return "Session already rated";
+        if (dto.getRating() < 1 || dto.getRating() > 5) return "Rating must be between 1 and 5";
+        if (dto.getReview() == null || dto.getReview().isBlank()) return "Review cannot be empty";
+        if (!ownerShip(event.getSessionRequest().getStudentProfile().getUser().getUsername(), authentication))
             return "Student mismatch";
-        if (dto.getReview() == null || dto.getReview().isBlank()) {
-            return "Review cannot be empty";
-        }
+        if (reviewRepository.findBySessionEvent(event).isPresent()) return "Review already submitted";
+
+        Optional<TeacherProfile> teacherProfileOpt =
+                teacherProfileRepository.findById(event.getSessionRequest().getTeacherProfile().getId());
+        if (teacherProfileOpt.isEmpty()) return "Teacher not found";
+
+        TeacherProfile teacherProfile = teacherProfileOpt.get();
+
+        // --- all validation passed, now mutate. Both writes are in the same
+        // transaction, so either both are saved or (on any error) both roll back.
+
+        teacherProfile.setTotalRating(teacherProfile.getTotalRating() + dto.getRating());
+        teacherProfile.setNumberOfRatings(teacherProfile.getNumberOfRatings() + 1);
+        teacherProfile.setRating(
+                (double) teacherProfile.getTotalRating() / teacherProfile.getNumberOfRatings());
+        teacherProfileRepository.save(teacherProfile);
+
+        event.setRated(true);
+        sessionEventRepository.save(event);
+
         Review review = new Review();
-        review.setStudentProfile(event.get().getStudentProfile());
+        review.setStudentProfile(event.getSessionRequest().getStudentProfile());
         review.setLocalDate(LocalDate.now());
-        review.setSessionEvent(event.get());
+        review.setSessionEvent(event);
         review.setReview(dto.getReview());
-        review.setTeacherProfile(event.get().getSessionRequest().getTeacherProfile());
+        review.setTeacherProfile(event.getSessionRequest().getTeacherProfile());
         reviewRepository.save(review);
-        return "Review added ";
 
-
-    }
-
-    @Transactional
-    public double rate(RatingDto dto ,Authentication authentication) {
-
-        Optional< SessionEvent> event = sessionEventRepository.findById(dto.getSessionEventId());
-
-        if (event.isPresent() && !event.get().isRated() && (dto.getRating() >= 1 && dto.getRating() <= 5)) {
-            Optional<TeacherProfile> teacherProfile =
-                    teacherProfileRepository.
-                            findById(event.get().getSessionRequest().getTeacherProfile().getId());
-            if(!ownerShip(event.get().
-                    getSessionRequest().getStudentProfile().
-                    getUser().getUsername(),authentication))
-                 return -1;
-            if (!event.get().getEventStatus().equals("COMPLETED"))
-                return -1;
-
-            if(teacherProfile.isEmpty())return -1;
-            teacherProfile.get().setTotalRating(teacherProfile.get().getTotalRating() + dto.getRating());
-
-            teacherProfile.get().setNumberOfRatings(teacherProfile.get().getNumberOfRatings() + 1);
-
-            teacherProfile.get().setRating((double) teacherProfile.get().getTotalRating() / teacherProfile.get().getNumberOfRatings());
-
-            teacherProfileRepository.save(teacherProfile.get());
-
-            event.get().setRated(true);
-
-            sessionEventRepository.save(event.get());
-
-            return teacherProfile.get().getRating();
-
-        }
-        return -1;
+        return "Feedback submitted";
     }
 }

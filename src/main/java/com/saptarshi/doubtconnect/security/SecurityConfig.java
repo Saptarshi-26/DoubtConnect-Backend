@@ -102,6 +102,8 @@ public class SecurityConfig {
                                 "/oauth/google/callback"
                         ).permitAll()
 
+                        .requestMatchers("/reset-password/**").permitAll()
+
                         .requestMatchers("/oauth/google/**")
                         .hasAnyRole("ADMIN", "TEACHER")
 
@@ -130,7 +132,7 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "STUDENT")
 
                         .requestMatchers("/slot-booking/**")
-                        .hasAnyRole("ADMIN", "STUDENT")
+                        .hasAnyRole("ADMIN", "STUDENT", "TEACHER")
 
                         .requestMatchers("/payment/order/**")
                         .hasAnyRole("ADMIN", "STUDENT")
@@ -170,8 +172,7 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/feedback/rate/**",
-                                "/feedback/review/**"
+                                "/feedback/submit"
                         )
                         .hasAnyRole("ADMIN", "STUDENT")
 

@@ -47,7 +47,7 @@ public class AuthService {
     public AuthResponse login(LoginRequest loginRequest){
         Optional<User> userOpt =
                 userRepository.findByUsername(
-                        loginRequest.getUsername());
+                        loginRequest.getUsername().trim());
 
         if(userOpt.isEmpty()){
             return null;
@@ -56,7 +56,7 @@ public class AuthService {
         User user = userOpt.get();
 
         if(!passwordEncoder.matches(
-                loginRequest.getPassword(),
+                loginRequest.getPassword().trim(),
                 user.getPassword())){
 
             return null;
@@ -119,10 +119,10 @@ public class AuthService {
 
         User user = new User();
         user.setRole(sign.getRole());
-        user.setUsername(sign.getUsername());
+        user.setUsername(sign.getUsername().trim());
         user.setPassword(
                 passwordEncoder.encode(
-                        sign.getPassword()
+                        sign.getPassword().trim()
                 )
         );
 
@@ -132,9 +132,9 @@ public class AuthService {
             StudentProfile studentProfile = new StudentProfile();
 
             studentProfile.setUser(user);
-            studentProfile.setGrade(sign.getGrade());
-            studentProfile.setBoard(sign.getBoard());
-            studentProfile.setLanguage(sign.getLanguage());
+            studentProfile.setGrade(sign.getGrade().trim());
+            studentProfile.setBoard(sign.getBoard().trim());
+            studentProfile.setLanguage(sign.getLanguage().trim());
             studentProfile.setGoogleEmail(googleEmail);
             studentProfileRepository.save(studentProfile);
             emailService.sendStudentWelcomeEmail(
@@ -146,8 +146,8 @@ public class AuthService {
         else if(user.getRole().equals("TEACHER")){
             TeacherProfile teacherProfile = new TeacherProfile();
             teacherProfile.setUser(user);
-            teacherProfile.setBio(sign.getBio());
-            teacherProfile.setSubjects(sign.getSubjects());
+            teacherProfile.setBio(sign.getBio().trim());
+            teacherProfile.setSubjects(sign.getSubjects().stream().map(String::trim).toList());
             teacherProfile.setLanguage(sign.getLanguage());
             teacherProfile.setRatePerThirtyMin(sign.getRatePerThirtyMin());
             teacherProfile.setGoogleEmail(googleEmail);

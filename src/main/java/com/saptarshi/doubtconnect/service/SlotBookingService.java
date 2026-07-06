@@ -288,11 +288,15 @@ public class SlotBookingService {
             return false;
         }
 
-        if (!isOwner(
-                session.get().getStudentProfile()
-                        .getUser()
-                        .getUsername(),
-                authentication)) {
+        boolean isStudent = isOwner(
+                session.get().getStudentProfile().getUser().getUsername(),
+                authentication);
+
+        boolean isTeacher = isOwner(
+                session.get().getTeacherProfile().getUser().getUsername(),
+                authentication);
+
+        if (!isStudent && !isTeacher) {
             return false;
         }
 
@@ -305,18 +309,15 @@ public class SlotBookingService {
                                 session.get().getTeacherProfile());
 
         for (TeacherAvailability slot : bookedSlots) {
-
             if (!slot.getStartTime().isBefore(session.get().getStartTime())
                     && !slot.getEndTime().isAfter(session.get().getEndTime())) {
-
                 slot.setBooked(false);
-                slot.setAvailable(true);
+                slot.setAvailable(true);   // reopened either way — teacher or student cancelling here means the time is free again, unlike cancelSlots
             }
         }
 
         teacherAvailabilityRepository.saveAll(bookedSlots);
         sessionRequestRepository.save(session.get().getSessionRequest());
-
         sessionEventRepository.save(session.get());
 
         return true;

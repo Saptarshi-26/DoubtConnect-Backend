@@ -1,10 +1,10 @@
 package com.saptarshi.doubtconnect.controller;
 
-import com.saptarshi.doubtconnect.dto.RatingDto;
-import com.saptarshi.doubtconnect.dto.ReviewDto;
+import com.saptarshi.doubtconnect.disabledPayementSystems.RatingDto;
+import com.saptarshi.doubtconnect.disabledPayementSystems.ReviewDto;
+import com.saptarshi.doubtconnect.dto.FeedbackDto;
 import com.saptarshi.doubtconnect.service.TeacherFeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -37,23 +37,12 @@ public class TeacherFeedBackController {
                         authentication));
     }
 
-    @PostMapping("/review")
-    public ResponseEntity<String> addReview(@RequestBody ReviewDto dto,
-                                            Authentication authentication) {
-
-        String response = service.review(dto, authentication);
-
-        return response.equals("Review added")
+    @PostMapping("/submit")
+    public ResponseEntity<String> submitFeedback(@RequestBody FeedbackDto dto,
+                                                 Authentication authentication) {
+        String response = service.submitFeedback(dto, authentication);
+        return response.equals("Feedback submitted")
                 ? new ResponseEntity<>(response, HttpStatus.OK)
                 : new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-    }
-
-    @PostMapping("/rate")
-    public ResponseEntity<?> rateTeacher(@RequestBody RatingDto dto , Authentication authentication){
-        double rating = service.rate(dto, authentication);
-
-        return rating == -1
-                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(rating, HttpStatus.OK);
     }
 }

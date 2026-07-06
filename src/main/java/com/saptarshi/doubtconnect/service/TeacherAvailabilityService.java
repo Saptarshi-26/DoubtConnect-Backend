@@ -15,10 +15,7 @@ import tools.jackson.databind.annotation.JsonAppend;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TeacherAvailabilityService {
@@ -235,8 +232,10 @@ public class TeacherAvailabilityService {
         }
 
         return teacherAvailabilityRepository
-                .findByTeacherProfileAndAvailableTrueAndBookedFalse(
-                        teacher.get())
+                .findByTeacherProfileAndAvailableTrueAndBookedFalseAndStartTimeAfter(
+                        teacher.get(),
+                        LocalDateTime.now()
+                )
                 .stream()
                 .map(slot -> {
 
@@ -264,46 +263,62 @@ public class TeacherAvailabilityService {
         Optional<TeacherProfile> teacher =
                 teacherProfileRepository.findById(teacherProfileId);
 
-        if (teacher.isEmpty()) {
-            return false;
-        }
+        if (teacher.isEmpty()) return false;
+        if (!isOwner(teacher.get(), authentication.getName())) return false;
 
-        if (!isOwner(teacher.get(), authentication.getName())) {
-            return false;
-        }
-
-        List<TeacherAvailability> slots =
+        List<TeacherAvailability> requestedSlots =
                 teacherAvailabilityRepository.findAllById(slotIds);
 
-        for (TeacherAvailability slot : slots) {
+        List<SessionEvent> teacherEvents =
+                sessionEventRepository.findByTeacherProfile(teacher.get());
+
+        Map<Long, SessionEvent> eventsToCancel = new HashMap<>();
+
+        for (TeacherAvailability slot : requestedSlots) {
 
             if (!slot.getTeacherProfile().getId().equals(teacherProfileId)) {
                 continue;
             }
 
-            slot.setAvailable(false);
-
             if (slot.isBooked()) {
 
-                Optional<SessionEvent> session =
-                        sessionEventRepository
-                                .findByTeacherProfileAndStartTimeAndEndTime(
-                                        teacher.get(),
-                                        slot.getStartTime(),
-                                        slot.getEndTime());
+                teacherEvents.stream()
+                        .filter(e -> !"CANCELLED".equals(e.getEventStatus())
+                                && !"COMPLETED".equals(e.getEventStatus()))
+                        .filter(e -> !slot.getStartTime().isBefore(e.getStartTime())
+                                && !slot.getEndTime().isAfter(e.getEndTime()))
+                        .findFirst()
+                        .ifPresent(event -> eventsToCancel.put(event.getId(), event));
 
-                if (session.isPresent()) {
-                    session.get().setEventStatus("CANCELLED");
-                    session.get().getSessionRequest().setStatus("CANCELLED");
-                    sessionRequestRepository.save(session.get().getSessionRequest());
-                    sessionEventRepository.save(session.get());
-                }
+            } else {
+                slot.setAvailable(false);
             }
         }
 
-        teacherAvailabilityRepository.saveAll(slots);
+        for (SessionEvent event : eventsToCancel.values()) {
 
-        return true;
+            event.setEventStatus("CANCELLED");
+            event.getSessionRequest().setStatus("CANCELLED");
+            sessionRequestRepository.save(event.getSessionRequest());
+            sessionEventRepository.save(event);
+
+            List<TeacherAvailability> bookedSlots =
+                    teacherAvailabilityRepository
+                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(teacher.get());
+
+            for (TeacherAvailability s : bookedSlots) {
+                if (!s.getStartTime().isBefore(event.getStartTime())
+                        && !s.getEndTime().isAfter(event.getEndTime())) {
+                    s.setBooked(false);
+                    s.setAvailable(false); // teacher is closing this time, not reopening it for booking
+                }
+            }
+            teacherAvailabilityRepository.saveAll(bookedSlots);
+        }
+
+        teacherAvailabilityRepository.saveAll(requestedSlots);
+
+        return !eventsToCancel.isEmpty();
     }
 
     public List<AvailabilityResponseDto> getTeacherAvailability(

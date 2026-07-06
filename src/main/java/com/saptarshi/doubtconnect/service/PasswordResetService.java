@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class PasswordResetService {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Transactional
     public boolean forgotPassword(
             ForgotPasswordRequest request) {
 
@@ -100,6 +102,7 @@ public class PasswordResetService {
 
 
 
+    @Transactional
     public boolean resetPassword(
             ResetPasswordRequest request) {
 
@@ -127,6 +130,28 @@ public class PasswordResetService {
                         request.getNewPassword()));
 
         userRepository.save(user);
+        String email;
+
+        Optional<StudentProfile> student =
+                studentProfileRepository.findByUser(user);
+
+        if (student.isPresent()) {
+
+            email = student.get().getGoogleEmail();
+
+        } else {
+
+            Optional<TeacherProfile> teacher =
+                    teacherProfileRepository.findByUser(user);
+
+            if (teacher.isEmpty()) {
+                return false;
+            }
+
+            email = teacher.get().getGoogleEmail();
+        }
+
+        emailService.sendPasswordChangedEmail(email);
 
         passwordResetTokenRepository.delete(token);
 
