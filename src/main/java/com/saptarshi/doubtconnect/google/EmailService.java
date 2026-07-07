@@ -129,7 +129,7 @@ public class EmailService {
                 to,
                 "Session Payment Available",
                 "Hi " + username + ",\n\n" +
-                        "The payment for your completed session has been processed successfully.\n\n" +
+                        "Please complete the payment .\n\n" +
                         "Thank you for learning with DoubtConnect.\n\n" +
                         "Regards,\n" +
                         "Team DoubtConnect"

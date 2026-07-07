@@ -42,8 +42,8 @@ public class TeacherController {
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<?> findAll(){
-        List<TeacherDto> profileList = teacherService.findAll();
+    public ResponseEntity<?> findAll(Authentication authentication){
+        List<TeacherDto> profileList = teacherService.findAll(authentication);
         return profileList.isEmpty()?new ResponseEntity<>("No teacher found",HttpStatus.OK):
                 new ResponseEntity<>(profileList,HttpStatus.OK);
     }

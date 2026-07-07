@@ -3,8 +3,6 @@ package com.saptarshi.doubtconnect.service;
 import com.saptarshi.doubtconnect.dto.AvailabilityDto;
 import com.saptarshi.doubtconnect.dto.AvailabilityResponseDto;
 import com.saptarshi.doubtconnect.entity.*;
-import com.saptarshi.doubtconnect.google.GoogleCredential;
-import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
 import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -36,7 +34,9 @@ public class TeacherAvailabilityService {
     private SessionRequestRepository sessionRequestRepository;
 
     @Autowired
-    private GoogleCredentialRepository googleCredentialRepository;
+    private TeacherMeetingDetailsRepository teacherMeetingDetailsRepository;
+
+
 
     @Autowired
     private  StudentProfileRepository studentProfileRepository;
@@ -67,11 +67,15 @@ public class TeacherAvailabilityService {
             return new ArrayList<>();
         }
 
-        Optional<GoogleCredential> credential =
-                googleCredentialRepository.findByTeacherProfile(teacher.get());
+        Optional<TeacherMeetingDetails> meetingDetails =
+                teacherMeetingDetailsRepository
+                        .findByTeacherProfile(teacher.get());
 
-        if (credential.isEmpty()) {
-            throw new RuntimeException("GOOGLE_NOT_CONNECTED");
+        if (meetingDetails.isEmpty()
+                || meetingDetails.get().getMeetingLink() == null
+                || meetingDetails.get().getMeetingLink().isBlank()) {
+
+            throw new RuntimeException("MEETING_LINK_NOT_SET");
         }
 
         LocalDate today = LocalDate.now();
@@ -133,9 +137,7 @@ public class TeacherAvailabilityService {
                 TeacherAvailability slot = new TeacherAvailability();
 
                 slot.setTeacherProfile(teacher.get());
-
                 slot.setStartTime(slotStart);
-
                 slot.setEndTime(slotStart.plusMinutes(30));
 
                 newSlots.add(slot);
@@ -144,7 +146,6 @@ public class TeacherAvailabilityService {
 
         return teacherAvailabilityRepository.saveAll(newSlots);
     }
-
 
     @Transactional
     public List<AvailabilityResponseDto> makeSlotsAvailable(

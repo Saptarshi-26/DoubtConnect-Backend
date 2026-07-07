@@ -1,15 +1,7 @@
 package com.saptarshi.doubtconnect.service;
 
-import com.saptarshi.doubtconnect.entity.SessionEvent;
-import com.saptarshi.doubtconnect.entity.SessionRequest;
-import com.saptarshi.doubtconnect.entity.StudentProfile;
-import com.saptarshi.doubtconnect.entity.TeacherAvailability;
-import com.saptarshi.doubtconnect.google.GoogleMeetService;
-import com.saptarshi.doubtconnect.google.GoogleOAuthService;
-import com.saptarshi.doubtconnect.repository.SessionEventRepository;
-import com.saptarshi.doubtconnect.repository.SessionRequestRepository;
-import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
-import com.saptarshi.doubtconnect.repository.TeacherAvailabilityRepository;
+import com.saptarshi.doubtconnect.entity.*;
+import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -35,7 +27,7 @@ public class SlotBookingService {
     private TeacherAvailabilityRepository teacherAvailabilityRepository;
 
     @Autowired
-    private GoogleMeetService googleMeetService;
+    private TeacherMeetingDetailsRepository teacherMeetingDetailsRepository;
 
 
     private boolean isOwner(String username , Authentication authentication){
@@ -229,19 +221,12 @@ public class SlotBookingService {
             bookedSlot.setBooked(true);
         }
 
-        String meetLink = null;
+        Optional<TeacherMeetingDetails> meetingDetails =
+                teacherMeetingDetailsRepository.findByTeacherProfile(
+                        sessionRequest.get().getTeacherProfile());
 
-        try {
-
-            meetLink = googleMeetService.createMeet(
-                    sessionRequest.get().getTeacherProfile(),
-                    bookedSlots.get(0).getStartTime(),
-                    bookedSlots.get(bookedSlots.size() - 1).getEndTime()
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
+        if (meetingDetails.isEmpty()) {
+            return null;
         }
 
         SessionEvent sessionEvent = new SessionEvent();
@@ -260,14 +245,17 @@ public class SlotBookingService {
         sessionEvent.setEndTime(
                 bookedSlots.get(bookedSlots.size() - 1).getEndTime());
 
-        sessionEvent.setMeetLink(meetLink);
+        sessionEvent.setMeetLink(
+                meetingDetails.get().getMeetingLink());
 
         sessionEvent.setEventStatus("UPCOMING");
+
         sessionEvent.setPaymentAvailable(false);
 
         sessionRequest.get().setStatus("BOOKED");
 
         teacherAvailabilityRepository.saveAll(bookedSlots);
+
         sessionRequestRepository.save(sessionRequest.get());
 
         return sessionEventRepository.save(sessionEvent);

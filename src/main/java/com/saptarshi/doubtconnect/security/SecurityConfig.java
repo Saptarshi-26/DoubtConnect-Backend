@@ -39,6 +39,14 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        .requestMatchers("/teacher-meeting/**")
+                        .hasRole("TEACHER")
+
+                        // -------------------- TEST DATA (REMOVE BEFORE PROD) --------------------
+
+                        .requestMatchers("/test-data/**")
+                        .permitAll()
+
                         // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -203,6 +211,21 @@ public class SecurityConfig {
                                 "/session-event/*"
                         )
                         .hasAnyRole("ADMIN", "STUDENT", "TEACHER")
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/report"
+                        ).hasRole("STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/report"
+                        ).hasRole("STUDENT")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/report"
+                        ).hasRole("STUDENT")
+
 
                         // -------------------- EVERYTHING ELSE --------------------
 

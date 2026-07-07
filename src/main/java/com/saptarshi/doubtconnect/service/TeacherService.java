@@ -4,7 +4,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.*;
 import com.saptarshi.doubtconnect.entity.*;
-import com.saptarshi.doubtconnect.google.GoogleCredentialRepository;
 import com.saptarshi.doubtconnect.payment.repository.PaymentOutRepository;
 import com.saptarshi.doubtconnect.repository.*;
 import jakarta.transaction.Transactional;
@@ -38,7 +37,7 @@ public class TeacherService {
     private TeacherAvailabilityRepository teacherAvailabilityRepository;
 
     @Autowired
-    private GoogleCredentialRepository googleCredentialRepository;
+    private TeacherMeetingDetailsRepository teacherMeetingDetailsRepository;
 
     @Autowired
     private SessionEventRepository sessionEventRepository;
@@ -47,7 +46,11 @@ public class TeacherService {
     private Cloudinary cloudinary;
 
     @Autowired
+    private ReportRepository reportRepository;
+
+    @Autowired
     private PaymentOutRepository paymentOutRepository;
+
 
     private boolean isOwner(TeacherProfile teacher, String username) {
 
@@ -58,6 +61,7 @@ public class TeacherService {
 
 
     public List<TeacherDto> searchBySubject(String subject, Authentication authentication) {
+
         Optional<StudentProfile> student =
                 studentProfileRepository.findByUserUsername(
                         authentication.getName());
@@ -66,16 +70,28 @@ public class TeacherService {
             return new ArrayList<>();
         }
 
-        String searchSubject = subject.trim().toUpperCase();
+        String searchSubject = subject.trim().toLowerCase();
 
         return teacherProfileRepository.findAll()
                 .stream()
+
+                .filter(teacher ->
+                        reportRepository.findByStudentProfileAndTeacherProfile(
+                                student.get(),
+                                teacher
+                        ).isEmpty())
+
+                .filter(teacher ->
+                        teacher.getPayoutDetails() != null
+                                && "ACTIVE".equals(
+                                teacher.getPayoutDetails().getAccountStatus()))
+
                 .filter(teacher ->
                         teacher.getSubjects()
                                 .stream()
                                 .anyMatch(x ->
                                         x.toLowerCase()
-                                                .contains(searchSubject.toLowerCase())))
+                                                .contains(searchSubject)))
 
                 .map(teacher -> {
 
@@ -100,6 +116,53 @@ public class TeacherService {
                     return dto;
                 })
                 .toList();
+    }
+    public List<TeacherDto> findAll(Authentication authentication) {
+
+        Optional<StudentProfile> student =
+                studentProfileRepository.findByUserUsername(
+                        authentication.getName());
+
+        if (student.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return teacherProfileRepository.findAll()
+                .stream()
+
+                .filter(teacher ->
+                        reportRepository.findByStudentProfileAndTeacherProfile(
+                                student.get(),
+                                teacher
+                        ).isEmpty())
+
+                .filter(x -> x.getPayoutDetails() != null
+                        && "ACTIVE".equals(
+                        x.getPayoutDetails().getAccountStatus()))
+
+                .map(teacher -> {
+
+                    TeacherDto dto = new TeacherDto();
+
+                    dto.setId(teacher.getId());
+                    dto.setName(teacher.getUser().getUsername());
+                    dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
+                    dto.setSubjects(teacher.getSubjects());
+                    dto.setLanguage(teacher.getLanguage());
+                    dto.setBio(teacher.getBio());
+                    dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
+                    dto.setRating(teacher.getRating());
+                    dto.setNumberOfRatings(teacher.getNumberOfRatings());
+
+                    if (teacher.getPayoutDetails().getUpiDetails() != null) {
+                        dto.setPaymentMethod("UPI");
+                    } else {
+                        dto.setPaymentMethod("BANK");
+                    }
+
+                    return dto;
+
+                }).toList();
     }
 
     @Transactional
@@ -166,36 +229,7 @@ public class TeacherService {
                }).toList();
    }
 
-    public List<TeacherDto> findAll() {
 
-        return teacherProfileRepository.findAll()
-                .stream()
-                .filter(x -> x.getPayoutDetails() != null
-                        && "ACTIVE".equals(x.getPayoutDetails().getAccountStatus()))
-                .map(teacher -> {
-
-                    TeacherDto dto = new TeacherDto();
-
-                    dto.setId(teacher.getId());
-                    dto.setName(teacher.getUser().getUsername());
-                    dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
-                    dto.setSubjects(teacher.getSubjects());
-                    dto.setLanguage(teacher.getLanguage());
-                    dto.setBio(teacher.getBio());
-                    dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
-                    dto.setRating(teacher.getRating());
-                    dto.setNumberOfRatings(teacher.getNumberOfRatings());
-
-                    if (teacher.getPayoutDetails().getUpiDetails() != null) {
-                        dto.setPaymentMethod("UPI");
-                    } else {
-                        dto.setPaymentMethod("BANK");
-                    }
-
-                    return dto;
-
-                }).toList();
-    }
 
     public Optional<TeacherDto> findTeacher(Long id) {
 
@@ -229,6 +263,70 @@ public class TeacherService {
         }
 
         return Optional.of(dto);
+    }
+
+    @Transactional
+    public TeacherMeetingDetails saveMeetingDetails(
+            Long teacherProfileId,
+            TeacherMeetingDetailsDto dto,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return null;
+        }
+
+        if (!isOwner(teacher.get(), authentication.getName())) {
+            return null;
+        }
+
+        TeacherMeetingDetails details =
+                teacherMeetingDetailsRepository
+                        .findByTeacherProfile(teacher.get())
+                        .orElse(new TeacherMeetingDetails());
+
+        details.setTeacherProfile(teacher.get());
+        details.setMeetingPlatform(dto.getMeetingPlatform());
+        details.setMeetingLink(dto.getMeetingLink());
+
+        return teacherMeetingDetailsRepository.save(details);
+    }
+
+    public TeacherMeetingDetailsDto getMeetingDetails(
+            Long teacherProfileId,
+            Authentication authentication) {
+
+        Optional<TeacherProfile> teacher =
+                teacherProfileRepository.findById(teacherProfileId);
+
+        if (teacher.isEmpty()) {
+            return null;
+        }
+
+        if (!isOwner(teacher.get(), authentication.getName())) {
+            return null;
+        }
+
+        Optional<TeacherMeetingDetails> details =
+                teacherMeetingDetailsRepository
+                        .findByTeacherProfile(teacher.get());
+
+        if(details.isEmpty()){
+            return null;
+        }
+
+        TeacherMeetingDetailsDto dto =
+                new TeacherMeetingDetailsDto();
+
+        dto.setMeetingPlatform(
+                details.get().getMeetingPlatform());
+
+        dto.setMeetingLink(
+                details.get().getMeetingLink());
+
+        return dto;
     }
 
 
@@ -353,11 +451,8 @@ public class TeacherService {
                                 teacher.get()));
 
         // Delete Google credentials
-
-        googleCredentialRepository
-                .findByTeacherProfile(teacher.get())
-                .ifPresent(
-                        googleCredentialRepository::delete);
+         Optional<TeacherMeetingDetails> meetingDetails = teacherMeetingDetailsRepository.findByTeacherProfile(teacher.get());
+        meetingDetails.ifPresent(teacherMeetingDetails -> teacherMeetingDetailsRepository.delete(teacherMeetingDetails));
 
         // Delete payout details (if present)
 
