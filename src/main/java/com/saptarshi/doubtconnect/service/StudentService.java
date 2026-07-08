@@ -95,10 +95,20 @@ public class StudentService {
         Optional<StudentProfile> studentProfile =
                 studentProfileRepository.findById(id);
 
-        if (studentProfile.isEmpty()
-                || !isOwner(studentProfile.get(), authentication.getName())) {
+        if((studentProfile.isEmpty())||
+                (!isOwner(studentProfile.get(),authentication.getName()))&&
+                (userRepository.findByUsername(authentication.getName()).isEmpty() ||
+                !userRepository.findByUsername(authentication.getName()).get().getRole().
+                        equals("TEACHER"))){
             return Optional.empty();
         }
+
+//        if (studentProfile.isEmpty()){
+//            if(!isOwner(studentProfile.get(), authentication.getName())) {
+//
+//                return Optional.empty();
+//            }
+//        }
         if(!studentProfile.get().isActive())return Optional.empty();
 
         StudentDto dto = new StudentDto();
