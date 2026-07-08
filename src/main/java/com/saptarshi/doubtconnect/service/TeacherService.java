@@ -408,6 +408,8 @@ public class TeacherService {
             return false;
         }
 
+        if(authentication.getName().startsWith("test_educator"))return false;
+
         // Cancel all pending session requests
 
         List<SessionRequest> pendingRequests =
@@ -445,11 +447,7 @@ public class TeacherService {
 
         // Delete all availability slots
 
-        teacherAvailabilityRepository.deleteAll(
-                teacherAvailabilityRepository
-                        .findByTeacherProfileOrderByStartTimeAsc(
-                                teacher.get()));
-
+        teacherAvailabilityRepository.deleteAllByTeacherProfile(teacher.get());
         // Delete Google credentials
          Optional<TeacherMeetingDetails> meetingDetails = teacherMeetingDetailsRepository.findByTeacherProfile(teacher.get());
         meetingDetails.ifPresent(teacherMeetingDetails -> teacherMeetingDetailsRepository.delete(teacherMeetingDetails));
