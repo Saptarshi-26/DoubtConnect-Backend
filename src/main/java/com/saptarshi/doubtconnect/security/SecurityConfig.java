@@ -39,6 +39,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/report/all"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/report/admin/**"
+                        ).hasRole("ADMIN")
+
                         .requestMatchers("/teacher-meeting/**")
                         .hasRole("TEACHER")
 

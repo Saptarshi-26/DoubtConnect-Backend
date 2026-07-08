@@ -111,6 +111,8 @@ public class ReportService {
 
         return true;
     }
+
+
     public List<Report> getReports(
             Long studentProfileId,
             Authentication authentication) {
@@ -128,5 +130,42 @@ public class ReportService {
         }
 
         return reportRepository.findByStudentProfile(student.get());
+    }
+
+    public List<Report> getAllReports() {
+
+        return reportRepository.findAll()
+                .stream()
+                .filter(report ->
+
+                        !report.getStudentProfile()
+                                .getUser()
+                                .getUsername()
+                                .startsWith("test_student")
+
+                                &&
+
+                                !report.getTeacherProfile()
+                                        .getUser()
+                                        .getUsername()
+                                        .startsWith("test_educator")
+
+                )
+                .toList();
+    }
+
+    @Transactional
+    public boolean deleteReport(Long reportId) {
+
+        Optional<Report> report =
+                reportRepository.findById(reportId);
+
+        if (report.isEmpty()) {
+            return false;
+        }
+
+        reportRepository.delete(report.get());
+
+        return true;
     }
 }

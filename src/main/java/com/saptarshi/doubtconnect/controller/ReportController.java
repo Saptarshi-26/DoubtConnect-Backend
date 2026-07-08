@@ -62,4 +62,15 @@ public class ReportController {
                 )
         );
     }
+    @GetMapping("/all")
+    public List<Report> getAllReports() {
+        return reportService.getAllReports();
+    }
+
+    @DeleteMapping("/admin/{reportId}")
+    public boolean deleteReport(
+            @PathVariable Long reportId) {
+
+        return reportService.deleteReport(reportId);
+    }
 }
