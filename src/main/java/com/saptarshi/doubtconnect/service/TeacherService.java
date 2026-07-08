@@ -52,6 +52,30 @@ public class TeacherService {
     private PaymentOutRepository paymentOutRepository;
 
 
+    private String extractPublicId(String url) {
+        if (url == null || url.isBlank()) return null;
+
+        try {
+            int uploadIndex = url.indexOf("/upload/");
+            if (uploadIndex == -1) return null;
+
+            String afterUpload = url.substring(uploadIndex + "/upload/".length());
+
+            // strip version segment like v1234567890/
+            if (afterUpload.startsWith("v") && afterUpload.contains("/")) {
+                afterUpload = afterUpload.substring(afterUpload.indexOf("/") + 1);
+            }
+
+            // strip file extension
+            int dotIndex = afterUpload.lastIndexOf(".");
+            return dotIndex != -1 ? afterUpload.substring(0, dotIndex) : afterUpload;
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
     private boolean isOwner(TeacherProfile teacher, String username) {
 
         Optional<User> user = userRepository.findByUsername(username);
@@ -74,6 +98,7 @@ public class TeacherService {
 
         return teacherProfileRepository.findAll()
                 .stream()
+                .filter(TeacherProfile::isActive)
 
                 .filter(teacher ->
                         reportRepository.findByStudentProfileAndTeacherProfile(
@@ -117,6 +142,7 @@ public class TeacherService {
                 })
                 .toList();
     }
+
     public List<TeacherDto> findAll(Authentication authentication) {
 
         Optional<StudentProfile> student =
@@ -135,6 +161,7 @@ public class TeacherService {
                                 student.get(),
                                 teacher
                         ).isEmpty())
+                .filter(TeacherProfile::isActive)
 
                 .filter(x -> x.getPayoutDetails() != null
                         && "ACTIVE".equals(
@@ -182,6 +209,10 @@ public class TeacherService {
             return null;
         }
 
+        if (!teacher.get().isActive()) {
+            return null;
+        }
+
         Map<?, ?> result =
                 cloudinary.uploader().upload(
                         file.getBytes(),
@@ -196,39 +227,37 @@ public class TeacherService {
     }
 
 
-   public List<TeacherDto> findAllInternal(){
-//       System.out.println("ADMIN GET ALL INTERNAL");
-//       System.out.println(teacherProfileRepository.findAll().size());
-       return teacherProfileRepository.findAll()
-               .stream()
-               .map(teacher -> {
+    public List<TeacherDto> findAllInternal() {
+        return teacherProfileRepository.findAll()
+                .stream()
+                .filter(TeacherProfile::isActive)
+                .map(teacher -> {
 
-                   TeacherDto dto = new TeacherDto();
+                    TeacherDto dto = new TeacherDto();
 
-                   dto.setId(teacher.getId());
-                   dto.setName(teacher.getUser().getUsername());
-                   dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
-                   dto.setSubjects(teacher.getSubjects());
-                   dto.setLanguage(teacher.getLanguage());
-                   dto.setBio(teacher.getBio());
-                   dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
-                   dto.setRating(teacher.getRating());
-                   dto.setNumberOfRatings(teacher.getNumberOfRatings());
+                    dto.setId(teacher.getId());
+                    dto.setName(teacher.getUser().getUsername());
+                    dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
+                    dto.setSubjects(teacher.getSubjects());
+                    dto.setLanguage(teacher.getLanguage());
+                    dto.setBio(teacher.getBio());
+                    dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
+                    dto.setRating(teacher.getRating());
+                    dto.setNumberOfRatings(teacher.getNumberOfRatings());
 
-                   if (teacher.getPayoutDetails() != null) {
+                    if (teacher.getPayoutDetails() != null) {
 
-                       if (teacher.getPayoutDetails().getUpiDetails() != null) {
-                           dto.setPaymentMethod("UPI");
-                       } else if (teacher.getPayoutDetails().getBankDetails() != null) {
-                           dto.setPaymentMethod("BANK");
-                       }
-                   }
+                        if (teacher.getPayoutDetails().getUpiDetails() != null) {
+                            dto.setPaymentMethod("UPI");
+                        } else if (teacher.getPayoutDetails().getBankDetails() != null) {
+                            dto.setPaymentMethod("BANK");
+                        }
+                    }
 
-                   return dto;
+                    return dto;
 
-               }).toList();
-   }
-
+                }).toList();
+    }
 
 
     public Optional<TeacherDto> findTeacher(Long id) {
@@ -237,6 +266,10 @@ public class TeacherService {
                 teacherProfileRepository.findById(id);
 
         if (teacher.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (!teacher.get().isActive()) {
             return Optional.empty();
         }
 
@@ -253,7 +286,7 @@ public class TeacherService {
         dto.setNumberOfRatings(teacher.get().getNumberOfRatings());
 
         if (teacher.get().getPayoutDetails() != null
-                && teacher.get().getPayoutDetails().getUpiDetails()!= null) {
+                && teacher.get().getPayoutDetails().getUpiDetails() != null) {
 
             dto.setPaymentMethod("UPI");
 
@@ -279,6 +312,10 @@ public class TeacherService {
         }
 
         if (!isOwner(teacher.get(), authentication.getName())) {
+            return null;
+        }
+
+        if (!teacher.get().isActive()) {
             return null;
         }
 
@@ -309,11 +346,15 @@ public class TeacherService {
             return null;
         }
 
+        if (!teacher.get().isActive()) {
+            return null;
+        }
+
         Optional<TeacherMeetingDetails> details =
                 teacherMeetingDetailsRepository
                         .findByTeacherProfile(teacher.get());
 
-        if(details.isEmpty()){
+        if (details.isEmpty()) {
             return null;
         }
 
@@ -338,6 +379,10 @@ public class TeacherService {
             return false;
         }
 
+        if (!teacher.get().isActive()) {
+            return false;
+        }
+
         teacher.get().setBio(dto.getBio());
         teacherProfileRepository.save(teacher.get());
 
@@ -349,6 +394,10 @@ public class TeacherService {
         Optional<TeacherProfile> teacher = teacherProfileRepository.findById(id);
 
         if (teacher.isEmpty() || !isOwner(teacher.get(), username)) {
+            return false;
+        }
+
+        if (!teacher.get().isActive()) {
             return false;
         }
 
@@ -364,6 +413,10 @@ public class TeacherService {
         Optional<TeacherProfile> teacher = teacherProfileRepository.findById(id);
 
         if (teacher.isEmpty() || !isOwner(teacher.get(), username)) {
+            return false;
+        }
+
+        if (!teacher.get().isActive()) {
             return false;
         }
 
@@ -385,6 +438,10 @@ public class TeacherService {
             return false;
         }
 
+        if (!teacher.get().isActive()) {
+            return false;
+        }
+
         teacher.get().getSubjects().remove(dto.getSubject());
 
         teacherProfileRepository.save(teacher.get());
@@ -395,75 +452,82 @@ public class TeacherService {
     @Transactional
     public boolean deleteTeacher(Long teacherId, Authentication authentication) {
 
-        Optional<TeacherProfile> teacher =
+        Optional<TeacherProfile> teacherOpt =
                 teacherProfileRepository.findById(teacherId);
 
-        if (teacher.isEmpty()) {
+        if (teacherOpt.isEmpty()) {
             return false;
         }
 
-        if (!isOwner(
-                teacher.get(),
-                authentication.getName())) {
+        TeacherProfile teacher = teacherOpt.get();
+
+        if (!isOwner(teacher, authentication.getName())) {
             return false;
         }
 
-        if(authentication.getName().startsWith("test_educator"))return false;
+        if (!teacher.isActive()) {
+            return false;
+        }
+
+        if (authentication.getName().startsWith("test_educator")) return false;
 
         // Cancel all pending session requests
-
         List<SessionRequest> pendingRequests =
-                sessionRequestRepository
-                        .findByTeacherProfileAndStatus(
-                                teacher.get(),
-                                "PENDING");
-
+                sessionRequestRepository.findByTeacherProfileAndStatus(teacher, "PENDING");
         for (SessionRequest request : pendingRequests) {
             request.setStatus("CANCELLED");
         }
-
         sessionRequestRepository.saveAll(pendingRequests);
 
         // Cancel all upcoming session events
-
         List<SessionEvent> upcomingSessions =
-                sessionEventRepository
-                        .findByTeacherProfileAndEventStatus(
-                                teacher.get(),
-                                "UPCOMING");
-
+                sessionEventRepository.findByTeacherProfileAndEventStatus(teacher, "UPCOMING");
         for (SessionEvent event : upcomingSessions) {
-
             event.setEventStatus("CANCELLED");
-
-            event.getSessionRequest()
-                    .setStatus("CANCELLED");
-
-            sessionRequestRepository.save(
-                    event.getSessionRequest());
+            event.getSessionRequest().setStatus("CANCELLED");
+            sessionRequestRepository.save(event.getSessionRequest());
         }
-
         sessionEventRepository.saveAll(upcomingSessions);
 
-        // Delete all availability slots
+        // Hard-delete availability slots
+        teacherAvailabilityRepository.deleteAllByTeacherProfile(teacher);
 
-        teacherAvailabilityRepository.deleteAllByTeacherProfile(teacher.get());
-        // Delete Google credentials
-         Optional<TeacherMeetingDetails> meetingDetails = teacherMeetingDetailsRepository.findByTeacherProfile(teacher.get());
-        meetingDetails.ifPresent(teacherMeetingDetails -> teacherMeetingDetailsRepository.delete(teacherMeetingDetails));
+        // Hard-delete meeting/Google credentials
+        teacherMeetingDetailsRepository.findByTeacherProfile(teacher)
+                .ifPresent(teacherMeetingDetailsRepository::delete);
 
-        // Delete payout details (if present)
-
-        if (teacher.get().getPayoutDetails() != null) {
-            paymentOutRepository.delete(
-                    teacher.get().getPayoutDetails());
+        // Hard-delete payout details
+        if (teacher.getPayoutDetails() != null) {
+            paymentOutRepository.delete(teacher.getPayoutDetails());
+            teacher.setPayoutDetails(null);
         }
 
-        User user = teacher.get().getUser();
+        // Remove from all students' favourites
+        studentProfileRepository.removeFromAllFavourites(teacherId);
 
-        teacherProfileRepository.delete(teacher.get());
+        // Delete profile picture from Cloudinary (only if it's a real Cloudinary URL)
+        String publicId = extractPublicId(teacher.getProfilePictureUrl());
+        if (publicId != null) {
+            try {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            } catch (IOException e) {
+                System.err.println("Failed to delete Cloudinary image: " + e.getMessage());
+            }
+        }
 
-        userRepository.delete(user);
+        // Scrub every personal/profile field
+        teacher.setProfilePictureUrl(null);
+        teacher.setBio("[deleted]");
+        teacher.setSubjects(new ArrayList<>());
+        teacher.setLanguage("[deleted]");
+        teacher.setRatePerThirtyMin(0);
+        teacher.setGoogleEmail("deleted_" + teacher.getId() + "@deleted.doubtconnect.internal");
+        teacher.setActive(false);
+        teacherProfileRepository.save(teacher);
+
+        User user = teacher.getUser();
+        user.setUsername("deleted_teacher_" + user.getId());
+        userRepository.save(user);
 
         return true;
     }

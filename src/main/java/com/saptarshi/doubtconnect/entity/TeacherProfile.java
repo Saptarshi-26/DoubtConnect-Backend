@@ -56,5 +56,8 @@ public class TeacherProfile {
     @Column(nullable = false, unique = true)
     private String googleEmail;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
 
 }

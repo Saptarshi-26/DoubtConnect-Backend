@@ -43,11 +43,35 @@ public class StudentService {
     @Autowired
     private TeacherAvailabilityRepository teacherAvailabilityRepository;
 
+    private String extractPublicId(String url) {
+        if (url == null || url.isBlank()) return null;
+
+        try {
+            int uploadIndex = url.indexOf("/upload/");
+            if (uploadIndex == -1) return null;
+
+            String afterUpload = url.substring(uploadIndex + "/upload/".length());
+
+            // strip version segment like v1234567890/
+            if (afterUpload.startsWith("v") && afterUpload.contains("/")) {
+                afterUpload = afterUpload.substring(afterUpload.indexOf("/") + 1);
+            }
+
+            // strip file extension
+            int dotIndex = afterUpload.lastIndexOf(".");
+            return dotIndex != -1 ? afterUpload.substring(0, dotIndex) : afterUpload;
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
 
     public List<StudentDto> getAll() {
 
         return studentProfileRepository.findAll()
-                .stream()
+                .stream().filter(StudentProfile::isActive)
                 .map(student -> {
 
                     StudentDto dto = new StudentDto();
@@ -75,6 +99,7 @@ public class StudentService {
                 || !isOwner(studentProfile.get(), authentication.getName())) {
             return Optional.empty();
         }
+        if(!studentProfile.get().isActive())return Optional.empty();
 
         StudentDto dto = new StudentDto();
 
@@ -112,7 +137,7 @@ public class StudentService {
                 !isOwner(student.get(), username)){
             return new ArrayList<>();
         }
-
+        if(!student.get().isActive())return new ArrayList<>();
         return student.get().getFavourites();
     }
 
@@ -133,6 +158,7 @@ public class StudentService {
                 !isOwner(student.get(), username)){
             return false;
         }
+        if(!student.get().isActive())return false;
 
         if(!student.get().getFavourites()
                 .contains(teacher.get())){
@@ -164,6 +190,7 @@ public class StudentService {
                 !isOwner(student.get(), username)){
             return false;
         }
+        if(!student.get().isActive())return false;
 
         student.get().getFavourites()
                 .remove(teacher.get());
@@ -183,6 +210,7 @@ public class StudentService {
         if (student.isEmpty()) {
             return null;
         }
+        if(!student.get().isActive())return null;
 
         if (!isOwner(student.get(), authentication.getName())) {
             return null;
@@ -207,47 +235,33 @@ public class StudentService {
     @Transactional
     public boolean deleteStudent(Long studentId, Authentication authentication) {
 
-        Optional<StudentProfile> student =
+        Optional<StudentProfile> studentOpt =
                 studentProfileRepository.findById(studentId);
 
-        if (student.isEmpty()) {
+        if (studentOpt.isEmpty()) {
             return false;
         }
 
-        if (!isOwner(
-                student.get(),
-                authentication.getName())) {
+        StudentProfile student = studentOpt.get();
+
+        if (!isOwner(student, authentication.getName())) {
             return false;
         }
 
         // Cancel pending requests
-
         List<SessionRequest> pendingRequests =
-                sessionRequestRepository
-                        .findByStudentProfileAndStatus(
-                                student.get(),
-                                "PENDING");
-
+                sessionRequestRepository.findByStudentProfileAndStatus(student, "PENDING");
         for (SessionRequest request : pendingRequests) {
             request.setStatus("CANCELLED");
         }
-
         sessionRequestRepository.saveAll(pendingRequests);
 
         // Cancel upcoming sessions
-
         List<SessionEvent> upcomingSessions =
-                sessionEventRepository
-                        .findByStudentProfileAndEventStatus(
-                                student.get(),
-                                "UPCOMING");
-
+                sessionEventRepository.findByStudentProfileAndEventStatus(student, "UPCOMING");
         for (SessionEvent event : upcomingSessions) {
-
             event.setEventStatus("CANCELLED");
-
-            event.getSessionRequest()
-                    .setStatus("CANCELLED");
+            event.getSessionRequest().setStatus("CANCELLED");
 
             List<TeacherAvailability> slots =
                     teacherAvailabilityRepository
@@ -255,32 +269,47 @@ public class StudentService {
                                     event.getTeacherProfile());
 
             for (TeacherAvailability slot : slots) {
-
                 if (!slot.getStartTime().isBefore(event.getStartTime())
                         && !slot.getEndTime().isAfter(event.getEndTime())) {
-
                     slot.setBooked(false);
                     slot.setAvailable(true);
                 }
             }
-
             teacherAvailabilityRepository.saveAll(slots);
 
-            sessionRequestRepository.save(
-                    event.getSessionRequest());
+            sessionRequestRepository.save(event.getSessionRequest());
         }
-
         sessionEventRepository.saveAll(upcomingSessions);
 
-        User user = student.get().getUser();
+        // Remove this student's favourites list (their own picks of teachers)
+        student.getFavourites().clear();
+        studentProfileRepository.save(student);
 
-        studentProfileRepository.delete(student.get());
+        // Delete profile picture from Cloudinary (only if it's a real Cloudinary URL)
+        String publicId = extractPublicId(student.getProfilePictureUrl());
+        if (publicId != null) {
+            try {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            } catch (IOException e) {
+                System.err.println("Failed to delete Cloudinary image: " + e.getMessage());
+            }
+        }
 
-        userRepository.delete(user);
+        // Scrub every personal/profile field
+        student.setProfilePictureUrl(null);
+        student.setGrade("[deleted]");
+        student.setBoard("[deleted]");
+        student.setLanguage("[deleted]");
+        student.setGoogleEmail("deleted_" + student.getId() + "@deleted.doubtconnect.internal");
+        student.setActive(false);
+        studentProfileRepository.save(student);
+
+        User user = student.getUser();
+        user.setUsername("deleted_student_" + user.getId());
+        userRepository.save(user);
 
         return true;
     }
-
     public boolean updateProfile(Long id, UpdateStudentDto dto, String username) {
 
         Optional<StudentProfile> student = studentProfileRepository.findById(id);
@@ -288,7 +317,7 @@ public class StudentService {
         if (student.isEmpty() || !isOwner(student.get(), username)) {
             return false;
         }
-
+        if(!student.get().isActive())return false;
         if (dto.getGrade() != null && !dto.getGrade().isBlank()) {
             student.get().setGrade(dto.getGrade());
         }
