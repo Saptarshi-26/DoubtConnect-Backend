@@ -11,9 +11,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+
 public class TeacherAvailability {
 
     @Id
+    @Version
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id ;
 

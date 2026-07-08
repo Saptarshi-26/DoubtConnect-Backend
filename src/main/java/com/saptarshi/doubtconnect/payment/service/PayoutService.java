@@ -240,6 +240,7 @@ public class PayoutService {
         Optional<TeacherProfile> profile =
                 teacherProfileRepository.findByUserUsername(username);
         if (profile.isPresent() && isOwner(profile.get(), username)) {
+            if(username.startsWith("test_educator"))return "Test educators not allowed to update ";
             if (profile.get().getPayoutDetails() == null || profile.get().getPayoutDetails().getAccountStatus().equals("INACTIVE")) {
                 PayoutDetails payoutDetails = profile.get().getPayoutDetails();
                 if (payoutDetails == null) {
@@ -305,6 +306,7 @@ public class PayoutService {
 
 
         if(profile.isPresent() && isOwner(profile.get(),username)){
+            if(username.startsWith("test_educator"))return "Test educators not allowed to update ";
             if(profile.get().getPayoutDetails()!=null){
                 PayoutDetails payoutDetails = profile.get().getPayoutDetails();
                 if (detailsDto.getUpiId() != null &&

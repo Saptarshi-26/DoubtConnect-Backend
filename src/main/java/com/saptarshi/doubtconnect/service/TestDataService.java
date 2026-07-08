@@ -1,11 +1,16 @@
-package com.saptarshi.doubtconnect.testdata;
+package com.saptarshi.doubtconnect.service;
 
 import com.saptarshi.doubtconnect.dto.StudentDto;
 import com.saptarshi.doubtconnect.dto.TeacherDto;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
+import com.saptarshi.doubtconnect.repository.ReportRepository;
 import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TestDataService {
+    @Autowired
+    private ReportRepository reportRepository;
 
     private final TeacherProfileRepository teacherProfileRepository;
     private final StudentProfileRepository studentProfileRepository;
@@ -69,5 +76,19 @@ public class TestDataService {
         dto.setBoard(student.getBoard());
         dto.setLanguage(student.getLanguage());
         return dto;
+    }
+
+    @Scheduled(fixedRate = 300000) // Every 5 minutes
+    @Transactional
+    public void remove_reports() {
+
+        reportRepository.findAll().stream()
+
+                .filter(report ->
+                        report.getStudentProfile().getUser().getUsername().startsWith("test_student")
+                                || report.getTeacherProfile().getUser().getUsername().startsWith("test_educator"))
+
+                .forEach(reportRepository::delete);
+
     }
 }
