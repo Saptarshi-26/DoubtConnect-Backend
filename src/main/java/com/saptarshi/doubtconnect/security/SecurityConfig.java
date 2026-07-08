@@ -147,7 +147,7 @@ public class SecurityConfig {
                         // -------------------- STUDENT --------------------
 
                         .requestMatchers("/student/**")
-                        .hasAnyRole("ADMIN", "STUDENT")
+                        .hasAnyRole("ADMIN", "STUDENT","TEACHER")
 
                         .requestMatchers("/slot-booking/**")
                         .hasAnyRole("ADMIN", "STUDENT", "TEACHER")
