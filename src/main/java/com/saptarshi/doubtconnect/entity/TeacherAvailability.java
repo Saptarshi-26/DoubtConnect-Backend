@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -15,9 +16,11 @@ import java.time.LocalDateTime;
 public class TeacherAvailability {
 
     @Id
-    @Version
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id ;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     private LocalDateTime startTime;
