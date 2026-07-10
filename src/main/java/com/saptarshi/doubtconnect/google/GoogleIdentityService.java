@@ -14,7 +14,7 @@ import java.util.Collections;
 @Service
 public class GoogleIdentityService {
 
-    @Value("${google.oauth.client-id}")
+    @Value("${google.client.id}")
     private String clientId;
 
     public GoogleUserInfo verify(String idTokenString)
