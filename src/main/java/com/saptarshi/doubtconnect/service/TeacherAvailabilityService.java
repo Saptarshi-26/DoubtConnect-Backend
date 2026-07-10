@@ -195,9 +195,9 @@ public class TeacherAvailabilityService {
             System.out.println(slot.getStartTime());
             System.out.println(LocalDateTime.now());
 
-            if (slot.getStartTime().isBefore(LocalDateTime.now())) {
+            if (!slot.getStartTime().isAfter(LocalDateTime.now())) {
                 throw new RuntimeException(
-                        "Past time slots cannot be made available.");
+                        "Past or current time slots cannot be made available.");
             }
             slot.setAvailable(true);
         }

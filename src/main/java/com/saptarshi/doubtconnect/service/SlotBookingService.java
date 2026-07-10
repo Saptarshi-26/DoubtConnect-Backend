@@ -192,6 +192,9 @@ public class SlotBookingService {
         if (!slot.get().isAvailable() || slot.get().isBooked()) {
             return null;
         }
+        if (!slot.get().getStartTime().isAfter(LocalDateTime.now())) {
+            return null;
+        }
 
         Optional<SessionEvent> existing =
                 sessionEventRepository.findBySessionRequest(sessionRequest.get());
@@ -216,6 +219,11 @@ public class SlotBookingService {
 
         if (bookedSlots == null) {
             return null;
+        }
+        for (TeacherAvailability bookedSlot : bookedSlots) {
+            if (!bookedSlot.getStartTime().isAfter(LocalDateTime.now())) {
+                return null;
+            }
         }
 
         for (TeacherAvailability bookedSlot : bookedSlots) {
