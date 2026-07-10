@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
+import com.saptarshi.doubtconnect.dto.TeacherDto;
 import com.saptarshi.doubtconnect.dto.UpdateStudentDto;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.repository.*;
@@ -77,7 +78,7 @@ public class StudentService {
                     StudentDto dto = new StudentDto();
 
                     dto.setId(student.getId());
-                    dto.setName(student.getUser().getUsername());
+                    dto.setName(student.getUser().getDisplayName());
                     dto.setProfilePictureUrl(student.getProfilePictureUrl());
                     dto.setGrade(student.getGrade());
                     dto.setBoard(student.getBoard());
@@ -114,12 +115,12 @@ public class StudentService {
         StudentDto dto = new StudentDto();
 
         dto.setId(studentProfile.get().getId());
-        dto.setName(studentProfile.get().getUser().getUsername());
+        dto.setName(studentProfile.get().getUser().getDisplayName());
         dto.setProfilePictureUrl(studentProfile.get().getProfilePictureUrl());
         dto.setGrade(studentProfile.get().getGrade());
         dto.setBoard(studentProfile.get().getBoard());
         dto.setLanguage(studentProfile.get().getLanguage());
-
+        System.out.println(dto.getName());
         return Optional.of(dto);
     }
 
@@ -136,7 +137,7 @@ public class StudentService {
 
 
 
-    public List<TeacherProfile> getFavourites(
+    public List<TeacherDto> getFavourites(
             Long id,
             String username){
 
@@ -148,7 +149,26 @@ public class StudentService {
             return new ArrayList<>();
         }
         if(!student.get().isActive())return new ArrayList<>();
-        return student.get().getFavourites();
+        return student.get().getFavourites().stream().map(teacher->{
+            TeacherDto dto = new TeacherDto();
+            dto.setId(teacher.getId());
+            dto.setName(teacher.getUser().getDisplayName());
+            dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
+            dto.setSubjects(teacher.getSubjects());
+            dto.setLanguage(teacher.getLanguage());
+            dto.setBio(teacher.getBio());
+            dto.setRatePerThirtyMin(teacher.getRatePerThirtyMin());
+            dto.setRating(teacher.getRating());
+            dto.setNumberOfRatings(teacher.getNumberOfRatings());
+
+            if (teacher.getPayoutDetails().getUpiDetails() != null) {
+                dto.setPaymentMethod("UPI");
+            } else {
+                dto.setPaymentMethod("BANK");
+            }
+            return dto;
+
+        }).toList();
     }
 
     public boolean addFavouriteTeacher(
@@ -212,7 +232,7 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentProfile uploadProfilePicture(Long studentProfileId, MultipartFile file, Authentication authentication) throws IOException {
+    public StudentDto uploadProfilePicture(Long studentProfileId, MultipartFile file, Authentication authentication) throws IOException {
 
         Optional<StudentProfile> student =
                 studentProfileRepository.findById(studentProfileId);
@@ -239,7 +259,19 @@ public class StudentService {
 
         student.get().setProfilePictureUrl(imageUrl);
 
-        return studentProfileRepository.save(student.get());
+        studentProfileRepository.save(student.get());
+        StudentDto dto = new StudentDto();
+
+        dto.setId(student.get().getId());
+        dto.setName(student.get().getUser().getDisplayName());
+        dto.setProfilePictureUrl(student.get().getProfilePictureUrl());
+        dto.setGrade(student.get().getGrade());
+        dto.setBoard(student.get().getBoard());
+        dto.setLanguage(student.get().getLanguage());
+        return dto;
+
+
+
     }
 
     @Transactional

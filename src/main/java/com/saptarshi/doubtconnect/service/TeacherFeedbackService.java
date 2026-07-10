@@ -1,8 +1,7 @@
 package com.saptarshi.doubtconnect.service;
 
-import com.saptarshi.doubtconnect.disabledPayementSystems.RatingDto;
-import com.saptarshi.doubtconnect.disabledPayementSystems.ReviewDto;
 import com.saptarshi.doubtconnect.dto.FeedbackDto;
+import com.saptarshi.doubtconnect.dto.ReviewDto;
 import com.saptarshi.doubtconnect.entity.*;
 import com.saptarshi.doubtconnect.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;

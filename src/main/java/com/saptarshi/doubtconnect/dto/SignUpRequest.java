@@ -8,24 +8,16 @@ import java.util.List;
 @Data
 public class SignUpRequest {
 
-    // User
-    private String username;
-    private String password;
-    private String role;    // Student Teacher
+    private String role;
 
-    // Student
     private String grade;
     private String language;
     private String board;
-
-    //Teacher
 
     private String bio;
     private List<String> subjects;
     private double ratePerThirtyMin;
 
-    // google token for google mail
     private String googleIdToken;
-
 
 }

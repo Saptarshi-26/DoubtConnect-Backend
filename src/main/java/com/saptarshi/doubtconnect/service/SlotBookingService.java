@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -192,9 +193,11 @@ public class SlotBookingService {
             return null;
         }
 
-        if (sessionEventRepository
-                .findBySessionRequest(sessionRequest.get())
-                .isPresent()) {
+        Optional<SessionEvent> existing =
+                sessionEventRepository.findBySessionRequest(sessionRequest.get());
+
+        if (existing.isPresent()
+                && !"CANCELLED".equals(existing.get().getEventStatus())) {
             return null;
         }
 
@@ -288,6 +291,12 @@ public class SlotBookingService {
             return false;
         }
 
+        // Cannot cancel ongoing or completed sessions
+        if (!session.get().getStartTime().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException(
+                    "Ongoing or completed sessions cannot be cancelled.");
+        }
+
         session.get().setEventStatus("CANCELLED");
         session.get().getSessionRequest().setStatus("CANCELLED");
 
@@ -300,7 +309,7 @@ public class SlotBookingService {
             if (!slot.getStartTime().isBefore(session.get().getStartTime())
                     && !slot.getEndTime().isAfter(session.get().getEndTime())) {
                 slot.setBooked(false);
-                slot.setAvailable(true);   // reopened either way — teacher or student cancelling here means the time is free again, unlike cancelSlots
+                slot.setAvailable(true);
             }
         }
 

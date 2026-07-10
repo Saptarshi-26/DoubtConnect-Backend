@@ -55,7 +55,7 @@ public class SecurityConfig {
                         // -------------------- TEST DATA (REMOVE BEFORE PROD) --------------------
 
                         .requestMatchers("/test-data/**")
-                        .permitAll()
+                        .hasAnyRole("STUDENT", "ADMIN")
 
                         // Swagger
                         .requestMatchers(

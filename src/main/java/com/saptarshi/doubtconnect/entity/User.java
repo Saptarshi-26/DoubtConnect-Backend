@@ -27,4 +27,7 @@ public class User {
     @Column(nullable = false)
     private String role; // Student or Teacher
 
+    @Column
+    private  String displayName;
+
 }

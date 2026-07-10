@@ -119,7 +119,7 @@ public class SessionRequestService {
         dto.setStudentName(
                 sessionRequest.getStudentProfile()
                         .getUser()
-                        .getUsername());
+                        .getDisplayName());
 
         dto.setStudentProfilePictureUrl(
                 sessionRequest.getStudentProfile()
@@ -131,7 +131,7 @@ public class SessionRequestService {
         dto.setTeacherName(
                 sessionRequest.getTeacherProfile()
                         .getUser()
-                        .getUsername());
+                        .getDisplayName());
 
         dto.setTeacherProfilePictureUrl(
                 sessionRequest.getTeacherProfile()
@@ -320,7 +320,7 @@ public class SessionRequestService {
                                 request.getStudentProfile().getId());
 
                         dto.setStudentName(
-                                request.getStudentProfile().getUser().getUsername());
+                                request.getStudentProfile().getUser().getDisplayName());
 
                         dto.setStudentProfilePictureUrl(
                                 request.getStudentProfile().getProfilePictureUrl());
@@ -329,7 +329,7 @@ public class SessionRequestService {
                                 request.getTeacherProfile().getId());
 
                         dto.setTeacherName(
-                                request.getTeacherProfile().getUser().getUsername());
+                                request.getTeacherProfile().getUser().getDisplayName());
 
                         dto.setTeacherProfilePictureUrl(
                                 request.getTeacherProfile().getProfilePictureUrl());
@@ -389,7 +389,7 @@ public class SessionRequestService {
                                 request.getStudentProfile().getId());
 
                         dto.setStudentName(
-                                request.getStudentProfile().getUser().getUsername());
+                                request.getStudentProfile().getUser().getDisplayName());
 
                         dto.setStudentProfilePictureUrl(
                                 request.getStudentProfile().getProfilePictureUrl());
@@ -398,7 +398,7 @@ public class SessionRequestService {
                                 request.getTeacherProfile().getId());
 
                         dto.setTeacherName(
-                                request.getTeacherProfile().getUser().getUsername());
+                                request.getTeacherProfile().getUser().getDisplayName());
 
                         dto.setTeacherProfilePictureUrl(
                                 request.getTeacherProfile().getProfilePictureUrl());

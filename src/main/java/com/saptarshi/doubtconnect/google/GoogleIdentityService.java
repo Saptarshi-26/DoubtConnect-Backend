@@ -17,7 +17,7 @@ public class GoogleIdentityService {
     @Value("${google.oauth.client-id}")
     private String clientId;
 
-    public String verifyAndGetEmail(String idTokenString)
+    public GoogleUserInfo verify(String idTokenString)
             throws GeneralSecurityException, IOException {
 
         GoogleIdTokenVerifier verifier =
@@ -41,8 +41,16 @@ public class GoogleIdentityService {
         if (emailVerified == null || !emailVerified) {
             return null;
         }
+//        System.out.println(payload.get("name"));
+//        System.out.println(payload.get("picture"));
 
-        return payload.getEmail();
+        return new GoogleUserInfo(
+                payload.getEmail(),
+                (String) payload.get("name"),
+                (String) payload.get("picture")
+        );
+
+
     }
 
 }

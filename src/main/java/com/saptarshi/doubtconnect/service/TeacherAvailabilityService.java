@@ -152,34 +152,34 @@ public class TeacherAvailabilityService {
             Long teacherProfileId,
             List<Long> slotIds,
             Authentication authentication) {
-
+       System.out.println("ENTERED makeSlotsAvailable");
         Optional<TeacherProfile> teacher =
                 teacherProfileRepository.findById(teacherProfileId);
-
+      //  System.out.println("1");
         if (teacher.isEmpty()) {
             return new ArrayList<>();
         }
-
+       System.out.println("2");
         if (!isOwner(teacher.get(), authentication.getName())) {
             return new ArrayList<>();
         }
-
+        System.out.println("3");
         List<TeacherAvailability> allSlots =
                 teacherAvailabilityRepository.findByTeacherProfileOrderByStartTimeAsc(teacher.get());
 
         // Reset every non-booked slot
+       System.out.println("4");
         for (TeacherAvailability slot : allSlots) {
 
             if (!slot.isBooked()) {
                 slot.setAvailable(false);
             }
-        }
-
+        }System.out.println("5");
         // Enable selected slots
         // Enable selected slots
         List<TeacherAvailability> selectedSlots =
                 teacherAvailabilityRepository.findAllById(slotIds);
-
+       System.out.println("6");
         for (TeacherAvailability slot : selectedSlots) {
 
             if (!slot.getTeacherProfile().getId().equals(teacherProfileId)) {
@@ -190,14 +190,18 @@ public class TeacherAvailabilityService {
                 continue;
             }
 
+            System.out.println("Current = " + LocalDateTime.now());
+            System.out.println("Slot    = " + slot.getStartTime());
+            System.out.println(slot.getStartTime());
+            System.out.println(LocalDateTime.now());
+
             if (slot.getStartTime().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException(
                         "Past time slots cannot be made available.");
             }
-
             slot.setAvailable(true);
         }
-
+        System.out.println("7");
         return teacherAvailabilityRepository.saveAll(allSlots)
                 .stream()
                 .map(slot -> {
@@ -255,6 +259,7 @@ public class TeacherAvailabilityService {
     }
 
 
+
     @Transactional
     public boolean cancelSlots(
             Long teacherProfileId,
@@ -298,22 +303,31 @@ public class TeacherAvailabilityService {
 
         for (SessionEvent event : eventsToCancel.values()) {
 
+            // Cannot cancel ongoing or completed sessions
+            if (!event.getStartTime().isAfter(LocalDateTime.now())) {
+                throw new RuntimeException(
+                        "Ongoing or completed sessions cannot be cancelled.");
+            }
+
             event.setEventStatus("CANCELLED");
             event.getSessionRequest().setStatus("CANCELLED");
+
             sessionRequestRepository.save(event.getSessionRequest());
             sessionEventRepository.save(event);
 
             List<TeacherAvailability> bookedSlots =
                     teacherAvailabilityRepository
-                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(teacher.get());
+                            .findByTeacherProfileAndBookedTrueOrderByStartTimeAsc(
+                                    teacher.get());
 
             for (TeacherAvailability s : bookedSlots) {
                 if (!s.getStartTime().isBefore(event.getStartTime())
                         && !s.getEndTime().isAfter(event.getEndTime())) {
                     s.setBooked(false);
-                    s.setAvailable(false); // teacher is closing this time, not reopening it for booking
+                    s.setAvailable(false);
                 }
             }
+
             teacherAvailabilityRepository.saveAll(bookedSlots);
         }
 
@@ -321,7 +335,6 @@ public class TeacherAvailabilityService {
 
         return !eventsToCancel.isEmpty();
     }
-
     public List<AvailabilityResponseDto> getTeacherAvailability(
             Long teacherProfileId,
             Authentication authentication) {

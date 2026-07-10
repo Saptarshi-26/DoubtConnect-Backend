@@ -123,7 +123,7 @@ public class TeacherService {
                     TeacherDto dto = new TeacherDto();
 
                     dto.setId(teacher.getId());
-                    dto.setName(teacher.getUser().getUsername());
+                    dto.setName(teacher.getUser().getDisplayName());
                     dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
                     dto.setSubjects(teacher.getSubjects());
                     dto.setLanguage(teacher.getLanguage());
@@ -172,7 +172,7 @@ public class TeacherService {
                     TeacherDto dto = new TeacherDto();
 
                     dto.setId(teacher.getId());
-                    dto.setName(teacher.getUser().getUsername());
+                    dto.setName(teacher.getUser().getDisplayName());
                     dto.setProfilePictureUrl(teacher.getProfilePictureUrl());
                     dto.setSubjects(teacher.getSubjects());
                     dto.setLanguage(teacher.getLanguage());
@@ -193,7 +193,7 @@ public class TeacherService {
     }
 
     @Transactional
-    public TeacherProfile uploadProfilePicture(
+    public TeacherDto uploadProfilePicture(
             Long teacherProfileId,
             MultipartFile file,
             Authentication authentication) throws IOException {
@@ -223,7 +223,28 @@ public class TeacherService {
 
         teacher.get().setProfilePictureUrl(imageUrl);
 
-        return teacherProfileRepository.save(teacher.get());
+        teacherProfileRepository.save(teacher.get());
+
+        TeacherDto dto = new TeacherDto();
+
+        dto.setId(teacher.get().getId());
+        dto.setName(teacher.get().getUser().getDisplayName());
+        dto.setProfilePictureUrl(teacher.get().getProfilePictureUrl());
+        dto.setSubjects(teacher.get().getSubjects());
+        dto.setLanguage(teacher.get().getLanguage());
+        dto.setBio(teacher.get().getBio());
+        dto.setRatePerThirtyMin(teacher.get().getRatePerThirtyMin());
+        dto.setRating(teacher.get().getRating());
+        dto.setNumberOfRatings(teacher.get().getNumberOfRatings());
+
+        if (teacher.get().getPayoutDetails().getUpiDetails() != null) {
+            dto.setPaymentMethod("UPI");
+        } else {
+            dto.setPaymentMethod("BANK");
+        }
+
+        return dto;
+
     }
 
 
@@ -276,7 +297,7 @@ public class TeacherService {
         TeacherDto dto = new TeacherDto();
 
         dto.setId(teacher.get().getId());
-        dto.setName(teacher.get().getUser().getUsername());
+        dto.setName(teacher.get().getUser().getDisplayName());
         dto.setProfilePictureUrl(teacher.get().getProfilePictureUrl());
         dto.setSubjects(teacher.get().getSubjects());
         dto.setLanguage(teacher.get().getLanguage());

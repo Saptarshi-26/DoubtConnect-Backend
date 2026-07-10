@@ -157,12 +157,12 @@ public class TeacherController {
     }
 
     @PostMapping("/profile-picture")
-    public ResponseEntity<TeacherProfile> uploadProfilePicture(
+    public ResponseEntity<TeacherDto> uploadProfilePicture(
             @RequestParam Long teacherProfileId,
             @RequestParam MultipartFile file,
             Authentication authentication) throws IOException {
 
-        TeacherProfile teacher =
+        TeacherDto teacher =
                 teacherService.uploadProfilePicture(
                         teacherProfileId,
                         file,

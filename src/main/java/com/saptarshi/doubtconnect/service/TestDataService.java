@@ -4,22 +4,29 @@ import com.saptarshi.doubtconnect.dto.StudentDto;
 import com.saptarshi.doubtconnect.dto.TeacherDto;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
+import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.repository.ReportRepository;
 import com.saptarshi.doubtconnect.repository.StudentProfileRepository;
 import com.saptarshi.doubtconnect.repository.TeacherProfileRepository;
+import com.saptarshi.doubtconnect.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.Schedules;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class TestDataService {
     @Autowired
     private ReportRepository reportRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private final TeacherProfileRepository teacherProfileRepository;
     private final StudentProfileRepository studentProfileRepository;
@@ -90,5 +97,131 @@ public class TestDataService {
 
                 .forEach(reportRepository::delete);
 
+    }
+
+    private boolean isAdmin(String username) {
+        Optional<User> user = userRepository.findByUsername(username);
+        return user.isPresent() && "ADMIN".equals(user.get().getRole());
+    }
+
+    public List<TeacherDto> getAllTestTeachers(Authentication authentication) {
+
+        boolean admin = isAdmin(authentication.getName());
+
+        Optional<StudentProfile> student = admin
+                ? Optional.empty()
+                : studentProfileRepository.findByUserUsername(authentication.getName());
+
+        if (!admin && student.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return teacherProfileRepository.findAll()
+                .stream()
+
+                .filter(teacher ->
+                        teacher.getUser() != null
+                                && teacher.getUser().getUsername() != null
+                                && teacher.getUser().getUsername().startsWith("test_educator"))
+
+                .filter(TeacherProfile::isActive)
+
+                .filter(teacher ->
+                        admin || reportRepository.findByStudentProfileAndTeacherProfile(
+                                student.get(),
+                                teacher
+                        ).isEmpty())
+
+                .filter(teacher ->
+                        teacher.getPayoutDetails() != null
+                                && "ACTIVE".equals(
+                                teacher.getPayoutDetails().getAccountStatus()))
+
+                .map(this::toTeacherDto)
+
+                .collect(Collectors.toList());
+    }
+
+    public List<TeacherDto> searchTestTeachers(
+            String subject,
+            Authentication authentication) {
+
+        boolean admin = isAdmin(authentication.getName());
+
+        Optional<StudentProfile> student = admin
+                ? Optional.empty()
+                : studentProfileRepository.findByUserUsername(authentication.getName());
+//        System.out.println("Authentication user = " + authentication.getName());
+//        System.out.println("Is admin = " + admin);
+//        System.out.println("Student found = " + student.isPresent());
+
+        if (!admin && student.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String searchSubject = subject.trim().toLowerCase();
+
+
+        return teacherProfileRepository.findAll()
+                .stream()
+
+                .filter(teacher ->
+                        teacher.getUser() != null
+                                && teacher.getUser().getUsername() != null
+                                && teacher.getUser().getUsername().startsWith("test_educator"))
+
+                .filter(TeacherProfile::isActive)
+
+                .filter(teacher ->
+                        admin || reportRepository.findByStudentProfileAndTeacherProfile(
+                                student.get(),
+                                teacher
+                        ).isEmpty())
+
+                .filter(teacher ->
+                        teacher.getPayoutDetails() != null
+                                && "ACTIVE".equals(
+                                teacher.getPayoutDetails().getAccountStatus()))
+
+                .filter(teacher ->
+                        teacher.getSubjects()
+                                .stream()
+                                .anyMatch(x ->
+                                        x.toLowerCase()
+                                                .contains(searchSubject)))
+
+                .map(this::toTeacherDto)
+
+                .collect(Collectors.toList());
+    }
+
+    public List<TeacherDto> getFavouriteTestTeachers(Long studentId) {
+
+        Optional<StudentProfile> student =
+                studentProfileRepository.findById(studentId);
+
+        if (student.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return student.get()
+                .getFavourites()
+                .stream()
+
+                .filter(teacher ->
+                        teacher.getUser() != null
+                                && teacher.getUser().getUsername() != null
+                                && teacher.getUser().getUsername().startsWith("test_educator"))
+
+                .filter(TeacherProfile::isActive)
+
+                .filter(teacher ->
+                        teacher.getPayoutDetails() != null
+                                && "ACTIVE".equals(
+                                teacher.getPayoutDetails().getAccountStatus()))
+
+                .map(this::toTeacherDto)
+
+                .collect(Collectors.toList());
     }
 }

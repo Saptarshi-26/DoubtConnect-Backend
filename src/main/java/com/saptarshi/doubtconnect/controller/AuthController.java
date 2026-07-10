@@ -1,8 +1,6 @@
 package com.saptarshi.doubtconnect.controller;
 
-import com.saptarshi.doubtconnect.dto.AuthResponse;
-import com.saptarshi.doubtconnect.dto.LoginRequest;
-import com.saptarshi.doubtconnect.dto.SignUpRequest;
+import com.saptarshi.doubtconnect.dto.*;
 import com.saptarshi.doubtconnect.entity.User;
 import com.saptarshi.doubtconnect.service.AuthService;
 import org.apache.tomcat.util.http.parser.HttpParser;
@@ -39,6 +37,35 @@ public class AuthController {
         }
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/google-login")
+    public ResponseEntity<?> googleLogin(
+            @RequestBody GoogleLoginRequest request) {
+
+        try {
+
+            AuthResponse response =
+                    authService.googleLogin(request.getGoogleIdToken());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        } catch (RuntimeException e) {
+
+            if ("USER_NOT_FOUND".equals(e.getMessage())) {
+
+                return new ResponseEntity<>(
+                        new AuthMessageResponse("USER_NOT_FOUND"),
+                        HttpStatus.NOT_FOUND
+                );
+
+            }
+
+            return new ResponseEntity<>(
+                    new AuthMessageResponse("Google login failed"),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
     }
 
 }

@@ -17,10 +17,10 @@ public class GoogleIdentityController {
 
         try {
 
-            String email = googleIdentityService
-                    .verifyAndGetEmail(request.getGoogleIdToken());
+            GoogleUserInfo googleUser = googleIdentityService
+                    .verify(request.getGoogleIdToken());
 
-            if (email == null) {
+            if (googleUser == null){
                 return new ResponseEntity<>(
                         "Invalid Google verification",
                         HttpStatus.BAD_REQUEST
@@ -28,7 +28,7 @@ public class GoogleIdentityController {
             }
 
             return new ResponseEntity<>(
-                    new GoogleVerificationResponse(email),
+                    new GoogleVerificationResponse(googleUser.getEmail()),
                     HttpStatus.OK
             );
 

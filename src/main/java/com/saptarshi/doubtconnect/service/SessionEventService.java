@@ -59,7 +59,7 @@ public class SessionEventService {
         dto.setStudentName(
                 event.getStudentProfile()
                         .getUser()
-                        .getUsername());
+                        .getDisplayName());
 
         dto.setStudentProfilePictureUrl(
                 event.getStudentProfile()
@@ -71,7 +71,7 @@ public class SessionEventService {
         dto.setTeacherName(
                 event.getTeacherProfile()
                         .getUser()
-                        .getUsername());
+                        .getDisplayName());
 
         dto.setTeacherProfilePictureUrl(
                 event.getTeacherProfile()
@@ -296,7 +296,7 @@ public class SessionEventService {
 
             int duration = session.getSessionRequest().getSessionDuration();
 
-            long paymentAfterMinutes = Math.round(duration * 0.35);
+            long paymentAfterMinutes = Math.round(duration * 0.15);
 
             if (!session.isPaymentAvailable()
                     && "ONGOING".equals(session.getEventStatus())

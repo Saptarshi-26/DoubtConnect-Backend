@@ -1,8 +1,7 @@
 package com.saptarshi.doubtconnect.controller;
 
-import com.saptarshi.doubtconnect.disabledPayementSystems.RatingDto;
-import com.saptarshi.doubtconnect.disabledPayementSystems.ReviewDto;
 import com.saptarshi.doubtconnect.dto.FeedbackDto;
+import com.saptarshi.doubtconnect.dto.ReviewDto;
 import com.saptarshi.doubtconnect.service.TeacherFeedbackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

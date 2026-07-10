@@ -2,6 +2,7 @@ package com.saptarshi.doubtconnect.controller.student;
 
 import com.saptarshi.doubtconnect.dto.FavouriteTeacherDTO;
 import com.saptarshi.doubtconnect.dto.StudentDto;
+import com.saptarshi.doubtconnect.dto.TeacherDto;
 import com.saptarshi.doubtconnect.dto.UpdateStudentDto;
 import com.saptarshi.doubtconnect.entity.StudentProfile;
 import com.saptarshi.doubtconnect.entity.TeacherProfile;
@@ -68,7 +69,7 @@ public class StudentController {
             @PathVariable Long id,
             Authentication authentication){
 
-        List<TeacherProfile> favourites =
+        List<TeacherDto> favourites =
                 studentService.getFavourites(
                         id,
                         authentication.getName());
@@ -113,12 +114,12 @@ public class StudentController {
     }
 
     @PostMapping("/profile-picture")
-    public ResponseEntity<StudentProfile> uploadProfilePicture(
+    public ResponseEntity<StudentDto> uploadProfilePicture(
             @RequestParam Long studentProfileId,
             @RequestParam MultipartFile file,
             Authentication authentication) throws IOException {
 
-        StudentProfile student =
+        StudentDto student =
                 studentService.uploadProfilePicture(
                         studentProfileId,
                         file,
