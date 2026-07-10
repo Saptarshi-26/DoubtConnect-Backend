@@ -348,6 +348,7 @@ public class StudentService {
 
         User user = student.getUser();
         user.setUsername("deleted_student_" + user.getId());
+        user.setDisplayName("Student not found");
         userRepository.save(user);
 
         return true;

@@ -548,6 +548,7 @@ public class TeacherService {
 
         User user = teacher.getUser();
         user.setUsername("deleted_teacher_" + user.getId());
+        user.setDisplayName("Teacher not found ");
         userRepository.save(user);
 
         return true;
