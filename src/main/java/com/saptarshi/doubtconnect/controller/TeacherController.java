@@ -42,10 +42,20 @@ public class TeacherController {
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<?> findAll(Authentication authentication){
+    public ResponseEntity<?> findAll(Authentication authentication) {
+
+        long start = System.currentTimeMillis();
+
         List<TeacherDto> profileList = teacherService.findAll(authentication);
-        return profileList.isEmpty()?new ResponseEntity<>("No teacher found",HttpStatus.OK):
-                new ResponseEntity<>(profileList,HttpStatus.OK);
+
+        ResponseEntity<?> response = profileList.isEmpty()
+                ? new ResponseEntity<>("No teacher found", HttpStatus.OK)
+                : new ResponseEntity<>(profileList, HttpStatus.OK);
+
+        System.out.println("GET /teacher/getAll total time = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        return response;
     }
 
     @GetMapping("/getAllInternal")
