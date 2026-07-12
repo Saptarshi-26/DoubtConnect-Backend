@@ -160,7 +160,16 @@ public class TeacherService {
 
         long t2 = System.currentTimeMillis();
 
+        System.out.println("Before findAll");
+
         List<TeacherProfile> teachers = teacherProfileRepository.findAll();
+
+        System.out.println("After findAll");
+
+        System.out.println("teacherProfileRepository.findAll = "
+                + (System.currentTimeMillis() - t2) + " ms");
+
+        System.out.println("Teachers loaded = " + teachers.size());
 
         System.out.println("teacherProfileRepository.findAll = "
                 + (System.currentTimeMillis() - t2) + " ms");
