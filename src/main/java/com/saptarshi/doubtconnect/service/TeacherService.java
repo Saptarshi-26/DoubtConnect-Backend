@@ -145,22 +145,36 @@ public class TeacherService {
 
     public List<TeacherDto> findAll(Authentication authentication) {
 
+        long total = System.currentTimeMillis();
+
+        long t1 = System.currentTimeMillis();
         Optional<StudentProfile> student =
-                studentProfileRepository.findByUserUsername(
-                        authentication.getName());
+                studentProfileRepository.findByUserUsername(authentication.getName());
+
+        System.out.println("Student lookup = "
+                + (System.currentTimeMillis() - t1) + " ms");
 
         if (student.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return teacherProfileRepository.findAll()
-                .stream()
+        long t2 = System.currentTimeMillis();
+
+        List<TeacherProfile> teachers = teacherProfileRepository.findAll();
+
+        System.out.println("teacherProfileRepository.findAll = "
+                + (System.currentTimeMillis() - t2) + " ms");
+
+        long t3 = System.currentTimeMillis();
+
+        List<TeacherDto> result = teachers.stream()
 
                 .filter(teacher ->
                         reportRepository.findByStudentProfileAndTeacherProfile(
                                 student.get(),
                                 teacher
                         ).isEmpty())
+
                 .filter(TeacherProfile::isActive)
 
                 .filter(x -> x.getPayoutDetails() != null
@@ -188,8 +202,15 @@ public class TeacherService {
                     }
 
                     return dto;
-
                 }).toList();
+
+        System.out.println("Stream processing = "
+                + (System.currentTimeMillis() - t3) + " ms");
+
+        System.out.println("TeacherService TOTAL = "
+                + (System.currentTimeMillis() - total) + " ms");
+
+        return result;
     }
 
     @Transactional
