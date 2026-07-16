@@ -2,6 +2,7 @@ package com.saptarshi.doubtconnect.google;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +16,11 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public boolean sendEmail(String to, String subject, String body) {
+    // Internal helper — deliberately NOT @Async on its own. Self-invocation
+    // (this.sendEmail(...)) from other methods in this class bypasses Spring's
+    // proxy, so @Async here alone would silently do nothing for those callers.
+    // Each public method below carries @Async instead, so it actually applies.
+    private boolean sendEmail(String to, String subject, String body) {
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -34,8 +39,9 @@ public class EmailService {
         }
     }
 
-    public boolean sendStudentWelcomeEmail(String to, String username) {
-        return sendEmail(
+    @Async
+    public void sendStudentWelcomeEmail(String to, String username) {
+        sendEmail(
                 to,
                 "Welcome to DoubtConnect!",
                 "Hi " + username + ",\n\n" +
@@ -45,8 +51,10 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendTeacherWelcomeEmail(String to, String username) {
-        return sendEmail(
+
+    @Async
+    public void sendTeacherWelcomeEmail(String to, String username) {
+        sendEmail(
                 to,
                 "Welcome to DoubtConnect!",
                 "Hi " + username + ",\n\n" +
@@ -56,9 +64,11 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendSessionReminderEmail(String to, String username) {
 
-        return sendEmail(
+    @Async
+    public void sendSessionReminderEmail(String to, String username) {
+
+        sendEmail(
                 to,
                 "Session Reminder - DoubtConnect",
                 "Hi " + username + ",\n\n" +
@@ -69,9 +79,11 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendSessionAcceptedEmail(String to, String username) {
 
-        return sendEmail(
+    @Async
+    public void sendSessionAcceptedEmail(String to, String username) {
+
+        sendEmail(
                 to,
                 "Session Request Accepted - DoubtConnect",
                 "Hi " + username + ",\n\n" +
@@ -81,9 +93,11 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendSessionRejectedEmail(String to, String username) {
 
-        return sendEmail(
+    @Async
+    public void sendSessionRejectedEmail(String to, String username) {
+
+        sendEmail(
                 to,
                 "Session Request Rejected - DoubtConnect",
                 "Hi " + username + ",\n\n" +
@@ -94,8 +108,9 @@ public class EmailService {
         );
     }
 
-    public boolean sendPasswordResetEmail(String to, String resetLink) {
-        return sendEmail(
+    @Async
+    public void sendPasswordResetEmail(String to, String resetLink) {
+        sendEmail(
                 to,
                 "Reset Your DoubtConnect Password",
                 "Hello,\n\n" +
@@ -109,8 +124,9 @@ public class EmailService {
         );
     }
 
-    public boolean sendPasswordChangedEmail(String to) {
-        return sendEmail(
+    @Async
+    public void sendPasswordChangedEmail(String to) {
+        sendEmail(
                 to,
                 "Your DoubtConnect Password Was Changed",
                 "Hello,\n\n" +
@@ -121,11 +137,12 @@ public class EmailService {
         );
     }
 
-    public boolean sendStudentPaymentAvailableEmail(
+    @Async
+    public void sendStudentPaymentAvailableEmail(
             String to,
             String username) {
 
-        return sendEmail(
+        sendEmail(
                 to,
                 "Session Payment Available",
                 "Hi " + username + ",\n\n" +
@@ -135,11 +152,13 @@ public class EmailService {
                         "Team DoubtConnect"
         );
     }
-    public boolean sendTeacherPaymentAvailableEmail(
+
+    @Async
+    public void sendTeacherPaymentAvailableEmail(
             String to,
             String username) {
 
-        return sendEmail(
+        sendEmail(
                 to,
                 "Session Payment Available",
                 "Hi " + username + ",\n\n" +

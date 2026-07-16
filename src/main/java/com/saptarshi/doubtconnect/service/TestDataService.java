@@ -15,9 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -115,8 +113,14 @@ public class TestDataService {
         if (!admin && student.isEmpty()) {
             return new ArrayList<>();
         }
+        Set<Long> reportedTeacherIds = admin
+                ? Collections.emptySet()
+                : reportRepository.findByStudentProfile(student.get())
+                  .stream()
+                  .map(report -> report.getTeacherProfile().getId())
+                  .collect(Collectors.toSet());
 
-        return teacherProfileRepository.findAll()
+        return teacherProfileRepository.findAllActiveTeachers()
                 .stream()
 
                 .filter(teacher ->
@@ -127,10 +131,7 @@ public class TestDataService {
                 .filter(TeacherProfile::isActive)
 
                 .filter(teacher ->
-                        admin || reportRepository.findByStudentProfileAndTeacherProfile(
-                                student.get(),
-                                teacher
-                        ).isEmpty())
+                        admin || !reportedTeacherIds.contains(teacher.getId()))
 
                 .filter(teacher ->
                         teacher.getPayoutDetails() != null
@@ -160,7 +161,12 @@ public class TestDataService {
         }
 
         String searchSubject = subject.trim().toLowerCase();
-
+        Set<Long> reportedTeacherIds = admin
+                ? Collections.emptySet()
+                : reportRepository.findByStudentProfile(student.get())
+                  .stream()
+                  .map(report -> report.getTeacherProfile().getId())
+                  .collect(Collectors.toSet());
 
         return teacherProfileRepository.findAll()
                 .stream()
@@ -171,12 +177,8 @@ public class TestDataService {
                                 && teacher.getUser().getUsername().startsWith("test_educator"))
 
                 .filter(TeacherProfile::isActive)
-
                 .filter(teacher ->
-                        admin || reportRepository.findByStudentProfileAndTeacherProfile(
-                                student.get(),
-                                teacher
-                        ).isEmpty())
+                        admin || !reportedTeacherIds.contains(teacher.getId()))
 
                 .filter(teacher ->
                         teacher.getPayoutDetails() != null

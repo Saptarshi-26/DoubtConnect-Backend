@@ -13,10 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TeacherService {
@@ -50,6 +48,10 @@ public class TeacherService {
 
     @Autowired
     private PaymentOutRepository paymentOutRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
 
 
     private String extractPublicId(String url) {
@@ -95,21 +97,17 @@ public class TeacherService {
         }
 
         String searchSubject = subject.trim().toLowerCase();
+        Set<Long> reportedTeacherIds = reportRepository
+                .findByStudentProfile(student.get())
+                .stream()
+                .map(report -> report.getTeacherProfile().getId())
+                .collect(Collectors.toSet());
 
-        return teacherProfileRepository.findAll()
+        return teacherProfileRepository.findAllActiveTeachers()
                 .stream()
                 .filter(TeacherProfile::isActive)
 
-                .filter(teacher ->
-                        reportRepository.findByStudentProfileAndTeacherProfile(
-                                student.get(),
-                                teacher
-                        ).isEmpty())
-
-                .filter(teacher ->
-                        teacher.getPayoutDetails() != null
-                                && "ACTIVE".equals(
-                                teacher.getPayoutDetails().getAccountStatus()))
+                .filter(teacher -> !reportedTeacherIds.contains(teacher.getId()))
 
                 .filter(teacher ->
                         teacher.getSubjects()
@@ -162,7 +160,10 @@ public class TeacherService {
 
         System.out.println("Before findAll");
 
-        List<TeacherProfile> teachers = teacherProfileRepository.findAll();
+        System.out.println("Before repository.findAll()");
+        List<TeacherProfile> teachers =
+                teacherProfileRepository.findAllActiveTeachers();
+        System.out.println("After repository.findAll()");
 
         System.out.println("After findAll");
 
@@ -176,19 +177,22 @@ public class TeacherService {
 
         long t3 = System.currentTimeMillis();
 
+        Set<Long> reportedTeacherIds = reportRepository
+                .findByStudentProfile(student.get())
+                .stream()
+                .map(report -> report.getTeacherProfile().getId())
+                .collect(Collectors.toSet());
+
+
         List<TeacherDto> result = teachers.stream()
 
-                .filter(teacher ->
-                        reportRepository.findByStudentProfileAndTeacherProfile(
-                                student.get(),
-                                teacher
-                        ).isEmpty())
+                .filter(teacher -> !reportedTeacherIds.contains(teacher.getId()))
 
-                .filter(TeacherProfile::isActive)
-
-                .filter(x -> x.getPayoutDetails() != null
-                        && "ACTIVE".equals(
-                        x.getPayoutDetails().getAccountStatus()))
+//                .filter(TeacherProfile::isActive)
+//
+//                .filter(x -> x.getPayoutDetails() != null
+//                        && "ACTIVE".equals(
+//                        x.getPayoutDetails().getAccountStatus()))
 
                 .map(teacher -> {
 
@@ -521,6 +525,56 @@ public class TeacherService {
         }
 
         if (authentication.getName().startsWith("test_educator")) return false;
+        boolean hasRequests =
+                sessionRequestRepository.existsByTeacherProfile(teacher);
+
+        boolean hasEvents =
+                sessionEventRepository.existsByTeacherProfile(teacher);
+
+        if (!hasRequests && !hasEvents) {
+
+            // Remove from favourites
+            studentProfileRepository.removeFromAllFavourites(teacherId);
+
+            // Delete availability
+            teacherAvailabilityRepository.deleteAllByTeacherProfile(teacher);
+
+            // Delete meeting details
+            teacherMeetingDetailsRepository.findByTeacherProfile(teacher)
+                    .ifPresent(teacherMeetingDetailsRepository::delete);
+
+            // Delete reports
+            reportRepository.deleteAllByTeacherProfile(teacher);
+
+            // Delete reviews
+            reviewRepository.deleteAllByTeacherProfile(teacher);
+
+            // Delete payout details
+            if (teacher.getPayoutDetails() != null) {
+                paymentOutRepository.delete(teacher.getPayoutDetails());
+                teacher.setPayoutDetails(null);
+            }
+
+            // Delete Cloudinary image
+            String publicId = extractPublicId(teacher.getProfilePictureUrl());
+
+            if (publicId != null) {
+                try {
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                } catch (IOException e) {
+                    System.err.println(
+                            "Failed to delete Cloudinary image: "
+                                    + e.getMessage());
+                }
+            }
+
+            User user = teacher.getUser();
+
+            teacherProfileRepository.delete(teacher);
+            userRepository.delete(user);
+
+            return true;
+        }
 
         // Cancel all pending session requests
         List<SessionRequest> pendingRequests =

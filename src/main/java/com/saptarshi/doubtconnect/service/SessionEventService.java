@@ -252,8 +252,13 @@ public class SessionEventService {
     @Scheduled(fixedRate = 30000) // Every 30 seconds
     @Transactional
     public void updateSessionEvents() {
+        System.out.println(
+                "Scheduler fired at " + LocalDateTime.now()
+        );
 
-        List<SessionEvent> sessions = sessionEventRepository.findAll();
+        List<SessionEvent> sessions =
+                sessionEventRepository.findByEventStatusIn(
+                        List.of("UPCOMING", "ONGOING"));
 
         LocalDateTime now = LocalDateTime.now();
 

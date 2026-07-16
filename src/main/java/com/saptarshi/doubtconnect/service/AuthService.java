@@ -132,161 +132,182 @@ public class AuthService {
     @Transactional
     public AuthMessageResponse signUp(SignUpRequest sign) {
 
-        if (!sign.getRole().equals("STUDENT")
-                && !sign.getRole().equals("TEACHER")
-                && !sign.getRole().equals("ADMIN")) {
+        long start = System.currentTimeMillis();
 
-            return new AuthMessageResponse("Invalid role");
-        }
+        try {
 
-        GoogleUserInfo googleUser;
+            if (!sign.getRole().equals("STUDENT")
+                    && !sign.getRole().equals("TEACHER")
+                    && !sign.getRole().equals("ADMIN")) {
 
-        if (!sign.getRole().equals("ADMIN")) {
-
-            try {
-                googleUser = googleIdentityService.verify(
-                        sign.getGoogleIdToken());
-
-            } catch (Exception e) {
-                return new AuthMessageResponse("Invalid Google verification");
+                return new AuthMessageResponse("Invalid role");
             }
 
-            if (googleUser == null) {
-                return new AuthMessageResponse("Invalid Google verification");
+            GoogleUserInfo googleUser;
+
+            if (!sign.getRole().equals("ADMIN")) {
+
+                try {
+                    googleUser = googleIdentityService.verify(
+                            sign.getGoogleIdToken());
+
+                } catch (Exception e) {
+                    return new AuthMessageResponse("Invalid Google verification");
+                }
+
+                if (googleUser == null) {
+                    return new AuthMessageResponse("Invalid Google verification");
+                }
+
+            } else {
+                return new AuthMessageResponse("ADMIN CREATION NOT ALLOWED");
             }
 
-        } else {
-            return new AuthMessageResponse("ADMIN CREATION NOT ALLOWED");
-        }
+            if (sign.getRole().equals("STUDENT")
+                    && studentProfileRepository
+                    .findByGoogleEmail(googleUser.getEmail())
+                    .isPresent()) {
 
-        if (sign.getRole().equals("STUDENT")
-                && studentProfileRepository
-                .findByGoogleEmail(googleUser.getEmail())
-                .isPresent()) {
+                return new AuthMessageResponse(
+                        "Google email is already registered as a student");
+            }
+
+            if (sign.getRole().equals("TEACHER")
+                    && teacherProfileRepository
+                    .findByGoogleEmail(googleUser.getEmail())
+                    .isPresent()) {
+
+                return new AuthMessageResponse(
+                        "Google email is already registered as a teacher");
+            }
+
+            if (sign.getRole().equals("STUDENT")
+                    && (sign.getGrade() == null || sign.getGrade().isBlank()
+                    || sign.getBoard() == null || sign.getBoard().isBlank()
+                    || sign.getLanguage() == null || sign.getLanguage().isBlank())) {
+
+                return new AuthMessageResponse("Grade, board, and language are required");
+            }
+
+            if (sign.getRole().equals("TEACHER")
+                    && (sign.getBio() == null || sign.getBio().isBlank()
+                    || sign.getLanguage() == null || sign.getLanguage().isBlank()
+                    || sign.getSubjects() == null || sign.getSubjects().isEmpty())) {
+
+                return new AuthMessageResponse("Bio, language, and at least one subject are required");
+            }
+
+            User user = new User();
+
+            user.setRole(sign.getRole());
+
+            user.setUsername(
+                    "dc_" + java.util.UUID.randomUUID()
+                            .toString()
+                            .replace("-", "")
+                            .substring(0, 8)
+            );
+
+            user.setDisplayName(googleUser.getName());
+
+            user.setPassword(
+                    passwordEncoder.encode(
+                            java.util.UUID.randomUUID().toString()
+                    )
+            );
+
+            userRepository.save(user);
+
+            Long profileId = null;
+
+            if (user.getRole().equals("STUDENT")) {
+
+                StudentProfile studentProfile = new StudentProfile();
+
+                studentProfile.setUser(user);
+                studentProfile.setGrade(sign.getGrade().trim());
+                studentProfile.setBoard(sign.getBoard().trim());
+                studentProfile.setLanguage(sign.getLanguage().trim());
+
+                studentProfile.setGoogleEmail(
+                        googleUser.getEmail()
+                );
+
+                studentProfile.setProfilePictureUrl(
+                        googleUser.getPicture()
+                );
+
+                studentProfileRepository.save(studentProfile);
+
+                profileId = studentProfile.getId();
+
+                emailService.sendStudentWelcomeEmail(
+                        googleUser.getEmail(),
+                        googleUser.getName()
+                );
+
+            } else if (user.getRole().equals("TEACHER")) {
+
+                TeacherProfile teacherProfile =
+                        new TeacherProfile();
+
+                teacherProfile.setUser(user);
+
+                teacherProfile.setBio(sign.getBio().trim());
+
+                teacherProfile.setSubjects(
+                        sign.getSubjects()
+                                .stream()
+                                .map(String::trim)
+                                .toList()
+                );
+
+                teacherProfile.setLanguage(
+                        sign.getLanguage()
+                );
+
+                teacherProfile.setRatePerThirtyMin(
+                        sign.getRatePerThirtyMin()
+                );
+
+                teacherProfile.setGoogleEmail(
+                        googleUser.getEmail()
+                );
+
+                teacherProfile.setProfilePictureUrl(
+                        googleUser.getPicture()
+                );
+
+                teacherProfileRepository.save(
+                        teacherProfile
+                );
+
+                profileId = teacherProfile.getId();
+
+                emailService.sendTeacherWelcomeEmail(
+                        googleUser.getEmail(),
+                        googleUser.getName()
+                );
+            }
+
+            // Auto-login: generate token right after successful signup
+            String token = jwtUtil.generateToken(user.getUsername());
 
             return new AuthMessageResponse(
-                    "Google email is already registered as a student");
-        }
-
-        if (sign.getRole().equals("TEACHER")
-                && teacherProfileRepository
-                .findByGoogleEmail(googleUser.getEmail())
-                .isPresent()) {
-
-            return new AuthMessageResponse(
-                    "Google email is already registered as a teacher");
-        }
-
-        if (sign.getRole().equals("STUDENT")
-                && (sign.getGrade() == null || sign.getGrade().isBlank()
-                || sign.getBoard() == null || sign.getBoard().isBlank()
-                || sign.getLanguage() == null || sign.getLanguage().isBlank())) {
-
-            return new AuthMessageResponse("Grade, board, and language are required");
-        }
-
-        if (sign.getRole().equals("TEACHER")
-                && (sign.getBio() == null || sign.getBio().isBlank()
-                || sign.getLanguage() == null || sign.getLanguage().isBlank()
-                || sign.getSubjects() == null || sign.getSubjects().isEmpty())) {
-
-            return new AuthMessageResponse("Bio, language, and at least one subject are required");
-        }
-
-        User user = new User();
-
-        user.setRole(sign.getRole());
-
-        // Internal username
-        user.setUsername(
-                "dc_" + java.util.UUID.randomUUID()
-                        .toString()
-                        .replace("-", "")
-                        .substring(0, 8)
-        );
-        user.setDisplayName(googleUser.getName());
-
-        // Random internal password
-        user.setPassword(
-                passwordEncoder.encode(
-                        java.util.UUID.randomUUID().toString()
-                )
-        );
-
-        userRepository.save(user);
-
-        if (user.getRole().equals("STUDENT")) {
-
-            StudentProfile studentProfile = new StudentProfile();
-
-            studentProfile.setUser(user);
-            studentProfile.setGrade(sign.getGrade().trim());
-            studentProfile.setBoard(sign.getBoard().trim());
-            studentProfile.setLanguage(sign.getLanguage().trim());
-
-            studentProfile.setGoogleEmail(
-                    googleUser.getEmail()
+                    "Successfully registered",
+                    token,
+                    user.getRole(),
+                    user.getDisplayName(),
+                    profileId
             );
 
-            studentProfile.setProfilePictureUrl(
-                    googleUser.getPicture()
-            );
+        } finally {
 
-            studentProfileRepository.save(studentProfile);
-
-            emailService.sendStudentWelcomeEmail(
-                    googleUser.getEmail(),
-                    googleUser.getName()
-            );
-
-        }
-
-        else if (user.getRole().equals("TEACHER")) {
-
-            TeacherProfile teacherProfile =
-                    new TeacherProfile();
-
-            teacherProfile.setUser(user);
-
-            teacherProfile.setBio(sign.getBio().trim());
-
-            teacherProfile.setSubjects(
-                    sign.getSubjects()
-                            .stream()
-                            .map(String::trim)
-                            .toList()
-            );
-
-            teacherProfile.setLanguage(
-                    sign.getLanguage()
-            );
-
-            teacherProfile.setRatePerThirtyMin(
-                    sign.getRatePerThirtyMin()
-            );
-
-            teacherProfile.setGoogleEmail(
-                    googleUser.getEmail()
-            );
-
-            teacherProfile.setProfilePictureUrl(
-                    googleUser.getPicture()
-            );
-
-            teacherProfileRepository.save(
-                    teacherProfile
-            );
-
-            emailService.sendTeacherWelcomeEmail(
-                    googleUser.getEmail(),
-                    googleUser.getName()
+            System.out.println(
+                    "Signup total = "
+                            + (System.currentTimeMillis() - start)
+                            + " ms"
             );
         }
-
-        return new AuthMessageResponse(
-                "Successfully registered"
-        );
     }
-
-
 }

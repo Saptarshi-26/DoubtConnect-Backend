@@ -15,4 +15,5 @@ public interface ReviewRepository extends JpaRepository<Review,Long> {
     Optional<Review> findBySessionEvent(SessionEvent sessionEvent);
     List<Review> findByTeacherProfile(TeacherProfile teacherProfile);
     List<Review> findByStudentProfile(StudentProfile studentProfile);
+    void deleteAllByTeacherProfile(TeacherProfile teacherProfile);
 }

@@ -23,4 +23,5 @@ public interface ReportRepository
     List<Report> findByTeacherProfile(
             TeacherProfile teacherProfile
     );
+    void deleteAllByTeacherProfile(TeacherProfile teacherProfile);
 }

@@ -190,14 +190,12 @@ public class StudentService {
         }
         if(!student.get().isActive())return false;
 
-        if(!student.get().getFavourites()
-                .contains(teacher.get())){
+        if (!student.get().getFavourites().contains(teacher.get())) {
 
-            student.get().getFavourites()
-                    .add(teacher.get());
+            student.get().getFavourites().add(teacher.get());
 
-            studentProfileRepository
-                    .save(student.get());
+            teacherProfileRepository.save(teacher.get());
+            studentProfileRepository.save(student.get());
         }
 
         return true;
@@ -222,12 +220,11 @@ public class StudentService {
         }
         if(!student.get().isActive())return false;
 
-        student.get().getFavourites()
-                .remove(teacher.get());
+        if (student.get().getFavourites().remove(teacher.get())) {
 
-        studentProfileRepository
-                .save(student.get());
-
+            teacherProfileRepository.save(teacher.get());
+            studentProfileRepository.save(student.get());
+        }
         return true;
     }
 
