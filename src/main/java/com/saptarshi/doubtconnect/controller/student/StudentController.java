@@ -30,7 +30,7 @@ public class StudentController {
     public ResponseEntity<?> deleteStudent(
             @PathVariable Long id,
             Authentication authentication) {
-
+        System.out.println("Delete endpoint hit");
         boolean deleted =
                 studentService.deleteStudent(
                         id,

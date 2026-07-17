@@ -217,5 +217,6 @@ public interface SessionEventRepository extends JpaRepository<SessionEvent,Long>
     List<SessionEvent> findByEventStatusIn(List<String> statuses);
 
     boolean existsByTeacherProfile(TeacherProfile teacherProfile);
+    boolean existsByStudentProfile(StudentProfile studentProfile);
 
 }

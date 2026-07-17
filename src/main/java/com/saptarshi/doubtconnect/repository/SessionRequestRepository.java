@@ -80,6 +80,7 @@ public interface SessionRequestRepository
  );
 
  boolean existsByTeacherProfile(TeacherProfile teacherProfile);
+ boolean existsByStudentProfile(StudentProfile studentProfile);
 
 }
 

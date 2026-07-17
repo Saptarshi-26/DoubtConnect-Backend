@@ -286,6 +286,35 @@ public class StudentService {
         if (!isOwner(student, authentication.getName())) {
             return false;
         }
+        if (student.getUser().getUsername().startsWith("test_")) {
+            return false;
+        }
+        System.out.println("Username = " + student.getUser().getUsername());
+
+        boolean hasSessionRequests =
+                sessionRequestRepository.existsByStudentProfile(student);
+
+        boolean hasSessionEvents =
+                sessionEventRepository.existsByStudentProfile(student);
+
+        if (!hasSessionRequests && !hasSessionEvents) {
+
+            String publicId = extractPublicId(student.getProfilePictureUrl());
+            if (publicId != null) {
+                try {
+                    cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                } catch (IOException e) {
+                    System.err.println("Failed to delete Cloudinary image: " + e.getMessage());
+                }
+            }
+
+            User user = student.getUser();
+
+            studentProfileRepository.delete(student);
+            userRepository.delete(user);
+
+            return true;
+        }
 
         // Cancel pending requests
         List<SessionRequest> pendingRequests =
@@ -298,6 +327,8 @@ public class StudentService {
         // Cancel upcoming sessions
         List<SessionEvent> upcomingSessions =
                 sessionEventRepository.findByStudentProfileAndEventStatus(student, "UPCOMING");
+
+
         for (SessionEvent event : upcomingSessions) {
             event.setEventStatus("CANCELLED");
             event.getSessionRequest().setStatus("CANCELLED");
