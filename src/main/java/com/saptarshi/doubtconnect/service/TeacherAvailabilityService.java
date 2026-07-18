@@ -210,7 +210,8 @@ public class TeacherAvailabilityService {
             if (slot.isBooked()) {
                 continue;
             }
-
+            System.out.println("Current server time = " + LocalDateTime.now());
+            System.out.println("Slot start time     = " + slot.getStartTime());
             if (!slot.getStartTime().isAfter(LocalDateTime.now())) {
                 System.out.println("Rejected: slot " + slot.getId() + " is in the past.");
                 throw new RuntimeException("Past or current time slots cannot be made available.");
@@ -307,7 +308,8 @@ public class TeacherAvailabilityService {
         Map<Long, SessionEvent> eventsToCancel = new HashMap<>();
 
         for (TeacherAvailability slot : requestedSlots) {
-
+            System.out.println("Current server time = " + LocalDateTime.now());
+            System.out.println("Slot start time     = " + slot.getStartTime());
             if (!slot.getTeacherProfile().getId().equals(teacherProfileId)) {
                 continue;
             }
