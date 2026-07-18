@@ -165,7 +165,7 @@ public class TeacherAvailabilityService {
             Long teacherProfileId,
             List<Long> slotIds,
             Authentication authentication) {
-
+        System.out.println("===== NEW VERSION OF makeSlotsAvailable =====");
         long total = System.currentTimeMillis();
         System.out.println("=== makeSlotsAvailable START (teacherProfileId=" + teacherProfileId + ", requestedSlotIds=" + slotIds.size() + ") ===");
 
