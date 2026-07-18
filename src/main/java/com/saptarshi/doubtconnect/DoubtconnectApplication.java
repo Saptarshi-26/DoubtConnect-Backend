@@ -31,7 +31,9 @@ public class DoubtconnectApplication {
 
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(DoubtconnectApplication.class, args);
+		System.out.println("Deployed via GitHub Actions!");
 	}
 
 }
