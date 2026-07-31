@@ -1,5 +1,5 @@
 # DoubtConnect Backend
-
+ 
 A production-ready Spring Boot backend powering **DoubtConnect**, an online platform that connects students with educators for one-to-one doubt-solving sessions.
 
 The backend handles authentication, educator discovery, availability scheduling, bookings, payments, Google Calendar integration, Google Meet generation, notifications, and secure role-based access.
